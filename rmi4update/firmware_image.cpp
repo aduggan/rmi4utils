@@ -1,0 +1,146 @@
+//===========================================================================
+// Copyright (c) 2012 Synaptics Incorporated. All rights reserved.
+//===========================================================================
+
+#include <iostream>
+#include <fstream>
+#include <string.h>
+#include <stdint.h>
+
+#include "firmware_image.h"
+
+using namespace std;
+
+unsigned long FirmwareImage::Checksum(unsigned short * data, unsigned long len)
+{
+	unsigned long checksum = 0xFFFFFFFF;
+	unsigned long lsw = checksum & 0xFFFF;
+	unsigned long msw = checksum >> 16;
+
+	while (len--) {
+		lsw += *data++;
+		msw += lsw;
+		lsw = (lsw & 0xffff) + (lsw >> 16);
+		msw = (msw & 0xffff) + (msw >> 16);
+	}
+
+	checksum = msw << 16 | lsw;
+
+	return checksum;
+}
+
+int FirmwareImage::Initialize(const char * filename)
+{
+	int rc;
+
+	if (!filename)
+		return UPDATE_FAIL_INVALID_PARAMETER;
+
+	ifstream ifsFile(filename, ios::in|ios::binary|ios::ate);
+	if (!ifsFile)
+		return UPDATE_FAIL_OPEN_FIRMWARE_IMAGE;
+
+	m_imageSize = (unsigned long)ifsFile.tellg();
+	m_memBlock = new unsigned char[m_imageSize];
+	ifsFile.seekg(0, ios::beg);
+	ifsFile.read((char*)m_memBlock, m_imageSize);
+
+	rc = ExtractHeader();
+	if (rc != UPDATE_SUCCESS)
+		return rc;
+
+	fprintf(stdout, "Firmware Header:\n");
+	PrintHeaderInfo();
+
+	return UPDATE_SUCCESS;
+}
+
+int FirmwareImage::ExtractHeader()
+{
+	m_checksum = extract_long(&m_memBlock[RMI_IMG_CHECKSUM_OFFSET]);
+	m_io = m_memBlock[RMI_IMG_IO_OFFSET];
+	m_bootloaderVersion = m_memBlock[RMI_IMG_BOOTLOADER_VERSION_OFFSET];
+	m_firmwareSize = extract_long(&m_memBlock[RMI_IMG_IMAGE_SIZE_OFFSET]);
+	m_configSize = extract_long(&m_memBlock[RMI_IMG_CONFIG_SIZE_OFFSET]);
+	if (m_io == 1) {
+		m_firmwareBuildID = extract_long(&m_memBlock[RMI_IMG_FW_BUILD_ID_OFFSET]);
+		m_packageID = extract_long(&m_memBlock[RMI_IMG_PACKAGE_ID_OFFSET]);
+	}
+	memcpy(m_productID, &m_memBlock[RMI_IMG_PRODUCT_ID_OFFSET], RMI_PRODUCT_ID_LENGTH);
+	m_productID[RMI_PRODUCT_ID_LENGTH] = 0;
+	memcpy(m_productInfo, &m_memBlock[RMI_IMG_PRODUCT_INFO_OFFSET], RMI_IMG_PRODUCT_INFO_LENGTH);
+
+	m_firmwareData = &m_memBlock[RMI_IMG_FW_OFFSET];
+	m_configData = &m_memBlock[RMI_IMG_FW_OFFSET + m_firmwareSize];
+
+	switch (m_bootloaderVersion) {
+		case 2:
+			m_lockdownSize = RMI_IMG_LOCKDOWN_V2_SIZE;
+			m_lockdownData = &m_memBlock[RMI_IMG_LOCKDOWN_V2_OFFSET];
+			break;
+		case 3:
+		case 4:
+			m_lockdownSize = RMI_IMG_LOCKDOWN_V3_SIZE;
+			m_lockdownData = &m_memBlock[RMI_IMG_LOCKDOWN_V3_OFFSET];
+			break;
+		case 5:
+			m_lockdownSize = RMI_IMG_LOCKDOWN_V5_SIZE;
+			m_lockdownData = &m_memBlock[RMI_IMG_LOCKDOWN_V5_OFFSET];
+			break;
+		case 6:
+			// TODO: Add support for V6
+		default:
+			return UPDATE_FAIL_UNSUPPORTED_IMAGE_VERSION;
+	}
+
+	return UPDATE_SUCCESS;
+}
+
+void FirmwareImage::PrintHeaderInfo()
+{
+	fprintf(stdout, "Checksum:\t\t0x%lx\n", m_checksum);
+	fprintf(stdout, "Firmware Size:\t\t%ld\n", m_firmwareSize);
+	fprintf(stdout, "Config Size:\t\t%ld\n", m_configSize);
+	fprintf(stdout, "Lockdown Size:\t\t%ld\n", m_lockdownSize);
+	fprintf(stdout, "Firmware Build ID:\t%ld\n", m_firmwareBuildID);
+	fprintf(stdout, "Package ID:\t\t%d\n", *((unsigned short*)&m_packageID));
+	fprintf(stdout, "Bootloader Version:\t%d\n", m_bootloaderVersion);
+	fprintf(stdout, "Product ID:\t\t%s\n", m_productID);
+	fprintf(stdout, "Product Info:\t\t%d\n", *((unsigned short*)&m_productInfo));
+	fprintf(stdout, "\n");
+}
+
+int FirmwareImage::VerifyImage(unsigned short deviceFirmwareSize, unsigned short deviceConfigSize)
+{
+	if (m_imageSize < 0x100)
+		return UPDATE_FAIL_VERIFY_IMAGE;
+
+	unsigned long calculated_checksum = Checksum((uint16_t *)&(m_memBlock[4]), 
+		(unsigned short)(m_imageSize - 4) >> 1);
+
+	if (m_checksum != calculated_checksum) {
+		fprintf(stderr, "Firmware image checksum verification failed, saw 0x%08lX, calculated 0x%08lX\n",
+			m_checksum, calculated_checksum);
+		return UPDATE_FAIL_VERIFY_CHECKSUM;
+	}
+
+	if (m_firmwareSize != deviceFirmwareSize) {
+		fprintf(stderr, "Firmware image size verfication failed, size in image %ld did "
+			"not match device size %d\n", m_firmwareSize, deviceFirmwareSize);
+		return UPDATE_FAIL_VERIFY_FIRMWARE_SIZE;
+	}
+
+	if (m_configSize != deviceConfigSize) {
+		fprintf(stderr, "Firmware image size verfication failed, size in image %ld did "
+			"not match device size %d\n", m_firmwareSize, deviceConfigSize);
+		return UPDATE_FAIL_VERIFY_CONFIG_SIZE;
+	}
+	
+	return UPDATE_SUCCESS;
+}
+
+FirmwareImage::~FirmwareImage()
+{
+	delete [] m_memBlock;
+	m_memBlock = NULL;
+}
