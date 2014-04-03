@@ -61,7 +61,7 @@ int RMI4Update::UpdateFirmware(bool force)
 {
 	struct timespec start;
 	struct timespec end;
-	int64_t duration_ns = 0;
+	long long int duration_ns = 0;
 	int rc;
 	const unsigned char eraseAll = RMI_F34_ERASE_ALL;
 
@@ -112,7 +112,7 @@ int RMI4Update::UpdateFirmware(bool force)
 #if 0 // TODO: convert to userspace
 			duration_ns = timespec_to_ns(&end) - timespec_to_ns(&start);
 #endif
-			fprintf(stdout, "Done writing lockdown, time: %ld ns.\n", duration_ns);
+			fprintf(stdout, "Done writing lockdown, time: %lld ns.\n", duration_ns);
 		}
 
 		rc = EnterFlashProgramming();
@@ -146,7 +146,7 @@ int RMI4Update::UpdateFirmware(bool force)
 #if 0 // TODO: convert to userspace
 	duration_ns = timespec_to_ns(&end) - timespec_to_ns(&start);
 #endif
-	fprintf(stdout, "Erase complete, time: %ld ns.\n", duration_ns);
+	fprintf(stdout, "Erase complete, time: %lld ns.\n", duration_ns);
 
 	if (m_firmwareImage.GetFirmwareData()) {
 		fprintf(stdout, "Writing firmware...\n");
@@ -161,7 +161,7 @@ int RMI4Update::UpdateFirmware(bool force)
 #if 0 // TODO: convert to userspace
 		duration_ns = timespec_to_ns(&end) - timespec_to_ns(&start);
 #endif
-		fprintf(stdout, "Done writing FW, time: %ld ns.\n", duration_ns);
+		fprintf(stdout, "Done writing FW, time: %lld ns.\n", duration_ns);
 	}
 
 	if (m_firmwareImage.GetConfigData()) {
@@ -177,7 +177,7 @@ int RMI4Update::UpdateFirmware(bool force)
 #if 0 // TODO: convert to userspace
 		duration_ns = timespec_to_ns(&end) - timespec_to_ns(&start);
 #endif
-		fprintf(stdout, "Done writing config, time: %ld ns.\n", duration_ns);
+		fprintf(stdout, "Done writing config, time: %lld ns.\n", duration_ns);
 	}
 	m_device.Reset();
 

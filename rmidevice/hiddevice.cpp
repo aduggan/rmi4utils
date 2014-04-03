@@ -45,6 +45,9 @@ int HIDDevice::Open(const char * filename)
 	int rc;
 	int desc_size;
 
+	if (!filename)
+		return -EINVAL;
+
 	m_fd = open(filename, O_RDWR);
 	if (m_fd < 0)
 		return -1;
@@ -261,7 +264,7 @@ int HIDDevice::GetAttentionReport(struct timeval * timeout, int *sources, unsign
 
 int HIDDevice::GetReport(int reportid, struct timeval * timeout)
 {
-	size_t count;
+	size_t count = 0;
 	unsigned char *queue_report;
 	fd_set fds;
 	int rc;
