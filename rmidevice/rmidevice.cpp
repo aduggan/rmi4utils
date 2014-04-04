@@ -259,3 +259,11 @@ int RMIDevice::ScanPDT()
 
 	return 0;
 }
+
+long long diff_time(struct timespec *start, struct timespec *end)
+{
+	long long diff;
+	diff = (end->tv_sec - start->tv_sec) * 1000 * 1000;
+	diff += (end->tv_nsec - start->tv_nsec) / 1000;
+	return diff;
+}

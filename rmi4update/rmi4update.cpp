@@ -61,7 +61,7 @@ int RMI4Update::UpdateFirmware(bool force)
 {
 	struct timespec start;
 	struct timespec end;
-	long long int duration_ns = 0;
+	long long int duration_us = 0;
 	int rc;
 	const unsigned char eraseAll = RMI_F34_ERASE_ALL;
 
@@ -109,10 +109,8 @@ int RMI4Update::UpdateFirmware(bool force)
 				return rc;
 			}
 			clock_gettime(CLOCK_MONOTONIC, &end);
-#if 0 // TODO: convert to userspace
-			duration_ns = timespec_to_ns(&end) - timespec_to_ns(&start);
-#endif
-			fprintf(stdout, "Done writing lockdown, time: %lld ns.\n", duration_ns);
+			duration_us = diff_time(&start, &end);
+			fprintf(stdout, "Done writing lockdown, time: %lld us.\n", duration_us);
 		}
 
 		rc = EnterFlashProgramming();
@@ -143,10 +141,8 @@ int RMI4Update::UpdateFirmware(bool force)
 		return rc;
 	}
 	clock_gettime(CLOCK_MONOTONIC, &end);
-#if 0 // TODO: convert to userspace
-	duration_ns = timespec_to_ns(&end) - timespec_to_ns(&start);
-#endif
-	fprintf(stdout, "Erase complete, time: %lld ns.\n", duration_ns);
+	duration_us = diff_time(&start, &end);
+	fprintf(stdout, "Erase complete, time: %lld us.\n", duration_us);
 
 	if (m_firmwareImage.GetFirmwareData()) {
 		fprintf(stdout, "Writing firmware...\n");
@@ -158,10 +154,8 @@ int RMI4Update::UpdateFirmware(bool force)
 			return rc;
 		}
 		clock_gettime(CLOCK_MONOTONIC, &end);
-#if 0 // TODO: convert to userspace
-		duration_ns = timespec_to_ns(&end) - timespec_to_ns(&start);
-#endif
-		fprintf(stdout, "Done writing FW, time: %lld ns.\n", duration_ns);
+		duration_us = diff_time(&start, &end);
+		fprintf(stdout, "Done writing FW, time: %lld us.\n", duration_us);
 	}
 
 	if (m_firmwareImage.GetConfigData()) {
@@ -174,10 +168,8 @@ int RMI4Update::UpdateFirmware(bool force)
 			return rc;
 		}
 		clock_gettime(CLOCK_MONOTONIC, &end);
-#if 0 // TODO: convert to userspace
-		duration_ns = timespec_to_ns(&end) - timespec_to_ns(&start);
-#endif
-		fprintf(stdout, "Done writing config, time: %lld ns.\n", duration_ns);
+		duration_us = diff_time(&start, &end);
+		fprintf(stdout, "Done writing config, time: %lld us.\n", duration_us);
 	}
 	m_device.Reset();
 

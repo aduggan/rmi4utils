@@ -63,4 +63,6 @@ protected:
 	int m_bytesPerReadRequest;
  };
 
+long long diff_time(struct timespec *start, struct timespec *end);
+
 #endif /* _RMIDEVICE_H_ */
