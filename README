@@ -8,4 +8,4 @@ Then:
 Install the latest verison of the Android NDK.
 Copy from the kernel source include/linux/hid.h and include/linux/hidraw.h to $(ANDROID_NDK)/platforms/android-19/arch-arm/usr/include/linux/
 Then run:
-$ ndk-build NDK_APPLICATION_MK=Application.mk
+$ make android
