@@ -11,19 +11,23 @@
 class RMIDevice
 {
 public:
-	RMIDevice(int bytesPerReadRequest = 0) : m_bytesPerReadRequest(bytesPerReadRequest)
+	RMIDevice(int bytesPerReadRequest = 0) : m_bCancel(false),
+			m_bytesPerReadRequest(bytesPerReadRequest), m_page(-1)
 	{}
 	virtual int Open(const char * filename) = 0;
 	virtual int Read(unsigned short addr, unsigned char *data,
 				unsigned short len) = 0;
 	virtual int Write(unsigned short addr, const unsigned char *data,
 				 unsigned short len) = 0;
-	virtual int SetMode(int mode) = 0;
+	virtual int SetMode(int mode) { return -1; /* Unsupported */ }
 	virtual int WaitForAttention(struct timeval * timeout = NULL, int *sources = NULL) = 0;
+	virtual int GetAttentionReport(struct timeval * timeout, int *sources, unsigned char *buf,
+					int *len)
+	{ return -1; /* Unsupported */ }
 	virtual void Close() = 0;
-	virtual void Cancel() = 0;
+	virtual void Cancel() { m_bCancel = true; }
 
-	virtual unsigned long GetFirmwareID() { return m_buildID; }
+	unsigned long GetFirmwareID() { return m_buildID; }
 	virtual int QueryBasicProperties();
 	
 	int SetRMIPage(unsigned char page);
@@ -51,6 +55,7 @@ protected:
 	unsigned short m_packageRev;
 	unsigned long m_buildID;
 	unsigned char m_sensorID;
+	unsigned long m_boardID;
 
 	bool m_hasDS4Queries;
 	bool m_hasMultiPhysical;
@@ -60,9 +65,12 @@ protected:
 	bool m_hasPackageIDQuery;
 	bool m_hasBuildIDQuery;
 
+	bool m_bCancel;
 	int m_bytesPerReadRequest;
+	int m_page;
  };
 
 long long diff_time(struct timespec *start, struct timespec *end);
+int Sleep(int ms);
 
 #endif /* _RMIDEVICE_H_ */

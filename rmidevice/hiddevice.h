@@ -8,8 +8,7 @@ class HIDDevice : public RMIDevice
 {
 public:
 	HIDDevice(int bytesPerReadRequest = 0) : RMIDevice(bytesPerReadRequest), m_headIdx(0),
-			m_tailIdx(0), m_deviceOpen(false), m_bCancel(false),
-			m_attnQueueCount(0)
+			m_tailIdx(0), m_deviceOpen(false), m_attnQueueCount(0)
 	{}
 	virtual int Open(const char * filename);
 	virtual int Read(unsigned short addr, unsigned char *buf,
@@ -18,9 +17,8 @@ public:
 				 unsigned short len);
 	virtual int SetMode(int mode);
 	virtual int WaitForAttention(struct timeval * timeout = NULL, int *sources = NULL);
-	int GetAttentionReport(struct timeval * timeout, int *sources, unsigned char *buf, int *len);
+	virtual int GetAttentionReport(struct timeval * timeout, int *sources, unsigned char *buf, int *len);
 	virtual void Close();
-	virtual void Cancel() { m_bCancel = true; }
 	~HIDDevice() { Close(); }
 
 private:
@@ -43,7 +41,6 @@ private:
 	size_t m_featureReportSize;
 
 	bool m_deviceOpen;
-	bool m_bCancel;
 
 	int m_attnQueueCount;
 

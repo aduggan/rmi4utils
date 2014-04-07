@@ -1,3 +1,6 @@
+NDK_PROJECT_PATH=$(PWD)
+export NDK_PROJECT_PATH
+
 all:
 	make -C rmidevice all
 	make -C rmi4update all

@@ -40,7 +40,18 @@
 
 int RMIDevice::SetRMIPage(unsigned char page)
 {
-	return Write(RMI_DEVICE_PAGE_SELECT_REGISTER, &page, 1);
+	int rc;
+
+	if (m_page == page)
+		return 0;
+
+	m_page = page;
+	rc = Write(RMI_DEVICE_PAGE_SELECT_REGISTER, &page, 1);
+	if (rc < 0) {
+		m_page = -1;
+		return rc;
+	}
+	return 0;
 }
 
 int RMIDevice::QueryBasicProperties()
@@ -179,8 +190,6 @@ int RMIDevice::Reset()
 {
 	int rc;
 	RMIFunction f01;
-	struct timespec ts;
-	struct timespec rem;
 	const unsigned char deviceReset = RMI_F01_CMD_DEVICE_RESET;
 
 	if (!GetFunction(f01, 1))
@@ -191,19 +200,9 @@ int RMIDevice::Reset()
 	if (rc < 0)
 		return rc;
 
-	ts.tv_sec = RMI_F01_DEFAULT_RESET_DELAY_MS / 1000;
-	ts.tv_nsec = (RMI_F01_DEFAULT_RESET_DELAY_MS % 1000) * 1000 * 1000;
-	for (;;) {
-		if (nanosleep(&ts, &rem) == 0) {
-			break;
-		} else {
-			if (errno == EINTR) {
-				ts = rem;
-				continue;
-			}
-			return -1;
-		}
-	}
+	rc = Sleep(RMI_F01_DEFAULT_RESET_DELAY_MS);
+	if (rc < 0)
+		return -1;
 	fprintf(stdout, "Reset completed.\n");
 	return 0;
 }
@@ -266,4 +265,25 @@ long long diff_time(struct timespec *start, struct timespec *end)
 	diff = (end->tv_sec - start->tv_sec) * 1000 * 1000;
 	diff += (end->tv_nsec - start->tv_nsec) / 1000;
 	return diff;
+}
+
+int Sleep(int ms)
+{
+	struct timespec ts;
+	struct timespec rem;
+
+	ts.tv_sec = ms / 1000;
+	ts.tv_nsec = (ms % 1000) * 1000 * 1000;
+	for (;;) {
+		if (nanosleep(&ts, &rem) == 0) {
+			break;
+		} else {
+			if (errno == EINTR) {
+				ts = rem;
+				continue;
+			}
+			return -1;
+		}
+	}
+	return 0;
 }
