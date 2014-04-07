@@ -47,9 +47,13 @@ int main(int argc, char **argv)
 
 	if (optind < argc)
 		deviceName = argv[optind++];
+	else
+		return -1;
 
 	if (optind < argc)
 		firmwareName = argv[optind];
+	else
+		return -1;
 
 	rc = rmidevice.Open(deviceName);
 	if (rc) {
