@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
+#include <getopt.h>
 
 #include <linux/types.h>
 #include <linux/input.h>
@@ -16,8 +17,17 @@
 
 #include "hiddevice.h"
 
+#define RMI4UPDATE_GETOPTS      "hp:"
+
 static int report_attn = 0;
-static HIDDevice * g_device = NULL;
+static RMIDevice * g_device = NULL;
+
+void printArgsHelp(const char *prog_name)
+{
+	fprintf(stdout, "Usage: %s [OPTIONS] DEVICEFILE FIRMWAREFILE\n", prog_name);
+	fprintf(stdout, "\t-h, --help\tPrint this message\n");
+	fprintf(stdout, "\t-p, --protocol [protocol]\tSet which transport prototocl to use.\n");
+}
 
 void print_help()
 {
@@ -59,7 +69,7 @@ int find_token(char * input, char * result, char ** endpp)
 	return 1;
 }
 
-int process(HIDDevice * device, char * input)
+int process(RMIDevice * device, char * input)
 {
 	unsigned char report[256];
 	char token[256];
@@ -161,24 +171,54 @@ int main(int argc, char ** argv)
 {
 	int rc;
 	struct sigaction sig_cleanup_action;
+	int opt;
+	int index;
+	RMIDevice *device;
+	const char *protocol = "HID";
+	static struct option long_options[] = {
+		{"help", 0, NULL, 'h'},
+		{"protocol", 1, NULL, 'p'},
+		{0, 0, 0, 0},
+	};
 
 	memset(&sig_cleanup_action, 0, sizeof(struct sigaction));
         sig_cleanup_action.sa_handler = cleanup;
         sig_cleanup_action.sa_flags = SA_RESTART;
         sigaction(SIGINT, &sig_cleanup_action, NULL);
 
-        HIDDevice device;
-	rc = device.Open(argv[1]);
+        while ((opt = getopt_long(argc, argv, RMI4UPDATE_GETOPTS, long_options, &index)) != -1) {
+                switch (opt) {
+                        case 'h':
+                                printArgsHelp(argv[0]);
+                                return 0;
+                        case 'p':
+                                protocol = optarg;
+                                break;
+                        default:
+                                break;
+
+                }
+        }
+
+	if (!strncasecmp("hid", protocol, 3)) {
+		device = new HIDDevice();
+        } else {
+		fprintf(stderr, "Invalid Protocol: %s\n", protocol);
+		return -1;
+        }
+
+	rc = device->Open(argv[optind++]);
 	if (rc) {
-		fprintf(stderr, "%s: failed to initialize rmi device (%d)\n", argv[0], rc);
+		fprintf(stderr, "%s: failed to initialize rmi device (%d): %s\n", argv[0], errno,
+			strerror(errno));
 		return 1;
 	}
 
-	device.ScanPDT();
-	device.QueryBasicProperties();
-	device.PrintProperties();
+	device->ScanPDT();
+	device->QueryBasicProperties();
+	device->PrintProperties();
 
-	g_device = &device;
+	g_device = device;
 
 	fprintf(stdout, "\n");
 	for (;;) {
@@ -187,12 +227,12 @@ int main(int argc, char ** argv)
 		char buf[256];
 
 		if (fgets(buf, 256, stdin)) {
-			if (process(&device, buf) == 1)
+			if (process(device, buf) == 1)
 				break;
 		}
 	}
 
-	device.Close();
+	device->Close();
 
 	return 0;
 }
