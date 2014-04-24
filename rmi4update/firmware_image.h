@@ -48,6 +48,9 @@
 class FirmwareImage
 {
 public:
+	FirmwareImage() : m_firmwareData(NULL), m_configData(NULL), m_lockdownData(NULL),
+				m_memBlock(NULL)
+	{}
 	int Initialize(const char * filename);
 	int VerifyImage(unsigned short deviceFirmwareSize, unsigned short deviceConfigSize);
 	unsigned char * GetFirmwareData() { return m_firmwareData; }
