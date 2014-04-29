@@ -34,19 +34,36 @@
 
 #include "hiddevice.h"
 
-#define RMI4UPDATE_GETOPTS      "hp:"
+#define RMI4UPDATE_GETOPTS      "hp:ir:w:foam"
+
+ enum rmihidtool_cmd {
+	RMIHIDTOOL_CMD_INTERACTIVE,
+	RMIHIDTOOL_CMD_READ,
+	RMIHIDTOOL_CMD_WRITE,
+	RMIHIDTOOL_CMD_FW_ID,
+	RMIHIDTOOL_CMD_PROPS,
+	RMIHIDTOOL_CMD_ATTN,
+	RMIHIDTOOL_CMD_PRINT_FUNCTIONS,
+};
 
 static int report_attn = 0;
 static RMIDevice * g_device = NULL;
 
-void printArgsHelp(const char *prog_name)
+void print_help(const char *prog_name)
 {
-	fprintf(stdout, "Usage: %s [OPTIONS] DEVICEFILE FIRMWAREFILE\n", prog_name);
-	fprintf(stdout, "\t-h, --help\tPrint this message\n");
-	fprintf(stdout, "\t-p, --protocol [protocol]\tSet which transport prototocl to use.\n");
+	fprintf(stdout, "Usage: %s [OPTIONS] DEVICEFILE\n", prog_name);
+	fprintf(stdout, "\t-h, --help\t\t\t\tPrint this message\n");
+	fprintf(stdout, "\t-p, --protocol [protocol]\t\tSet which transport prototocl to use.\n");
+	fprintf(stdout, "\t-i, --interactive\t\t\tRun in interactive mode.\n");
+	fprintf(stdout, "\t-r, --read [address] [length]\t\tRead registers starting at the address.\n");
+	fprintf(stdout, "\t-r, --write [address] [length] [data]\tWrite registers starting at the address.\n");
+	fprintf(stdout, "\t-f, --firmware-id\t\t\tPrint the firmware id\n");
+	fprintf(stdout, "\t-o, --props\t\t\t\tPrint device properties\n");
+	fprintf(stdout, "\t-a, --attention\t\t\t\tPrint attention reports until control + c\n");
+	fprintf(stdout, "\t-m, --print-functions\t\t\tPrint RMI4 functions for the device.\n");
 }
 
-void print_help()
+void print_cmd_usage()
 {
 	fprintf(stdout, "Commands:\n");
 	fprintf(stdout, "s [0,1,2]: Set RMIMode\n");
@@ -75,9 +92,8 @@ int find_token(char * input, char * result, char ** endpp)
 	}
 	end = &input[i];
 
-	if (start == end) {
+	if (start == end)
 		return 0;
-	}
 
 	*endpp = end;
 	strncpy(result, start, end - start);
@@ -86,91 +102,81 @@ int find_token(char * input, char * result, char ** endpp)
 	return 1;
 }
 
-int process(RMIDevice * device, char * input)
+
+
+void interactive(RMIDevice * device, unsigned char *report)
 {
-	unsigned char report[256];
 	char token[256];
 	char * start;
 	char * end;
 	int rc;
 
-	memset(token, 0, 256);
-
-	if (input[0] == 's') {
-		start = input + 2;
-		find_token(start, token, &end);
-		int mode = strtol(token, NULL, 0);
-		if (mode >= 0 && mode <= 2) {
-			if (device->SetMode(mode)) {
-				fprintf(stderr, "Set RMI Mode to: %d\n", mode);
-			} else {
-				fprintf(stderr, "Set RMI Mode FAILED!\n");
-				return -1;
-			}
-		}
-	} else if (input[0] == 'r') {
-		start = input + 2;
-		find_token(start, token, &end);
-		start = end + 1;
-		int addr = strtol(token, NULL, 0);
-		find_token(start, token, &end);
-		start = end + 1;
-		int len = strtol(token, NULL, 0);
-		fprintf(stdout, "Address = 0x%02x Length = %d\n", addr, len);
-
-		memset(report, 0, sizeof(report));
-		rc = device->Read(addr, report, len);
-		if (rc < 0)
-			fprintf(stderr, "Failed to read report: %d\n", rc);
-		
-		fprintf(stdout, "Data:\n");
-		for (int i = 0; i < len; ++i) {
-			fprintf(stdout, "0x%02X ", report[i]);
-			if (i % 8 == 7) {
-				fprintf(stdout, "\n");
-			}
-		}
+	for (;;) {
 		fprintf(stdout, "\n");
-	} else if (input[0] == 'w') {
-		int index = 0;
-		start = input + 2;
-		find_token(start, token, &end);
-		start = end + 1;
-		int addr = strtol(token, NULL, 0);
-		int len = 0;
+		print_cmd_usage();
+		char input[256];
 
-		while (find_token(start, token, &end)) {
-			start = end + 1;
-			report[index++] = (unsigned char)strtol(token, NULL, 0);
-			++len;
-		}
+		if (fgets(input, 256, stdin)) {
+			memset(token, 0, 256);
 
-		memset(report, 0, sizeof(report));
-
-		if (device->Write(addr, report, len) < 0) {
-			fprintf(stderr, "Failed to Write Report\n");
-			return -1;
-		}
-	} else if (input[0] == 'a') {
-		report_attn = 1;
-		while(report_attn) {
-			int bytes = 256;
-			device->GetAttentionReport(NULL, NULL, report, &bytes);
-			fprintf(stdout, "Data:\n");
-			for (int i = 0; i < bytes; ++i) {
-				fprintf(stdout, "0x%02X ", report[i]);
-				if (i % 8 == 7) {
-					fprintf(stdout, "\n");
+			if (input[0] == 's') {
+				start = input + 2;
+				find_token(start, token, &end);
+				int mode = strtol(token, NULL, 0);
+				if (mode >= 0 && mode <= 2) {
+					if (device->SetMode(mode)) {
+						fprintf(stderr, "Set RMI Mode to: %d\n", mode);
+					} else {
+						fprintf(stderr, "Set RMI Mode FAILED!\n");
+						continue;
+					}
 				}
+			} else if (input[0] == 'r') {
+				start = input + 2;
+				find_token(start, token, &end);
+				start = end + 1;
+				unsigned int addr = strtol(token, NULL, 0);
+				find_token(start, token, &end);
+				start = end + 1;
+				unsigned int len = strtol(token, NULL, 0);
+				fprintf(stdout, "Address = 0x%02x Length = %d\n", addr, len);
+
+				memset(report, 0, 256);
+				rc = device->Read(addr, report, len);
+				if (rc < 0)
+					fprintf(stderr, "Failed to read report: %d\n", rc);
+				print_buffer(report, len);
+			} else if (input[0] == 'w') {
+				int index = 0;
+				start = input + 2;
+				find_token(start, token, &end);
+				start = end + 1;
+				unsigned int addr = strtol(token, NULL, 0);
+				unsigned int len = 0;
+
+				memset(report, 0, 256);
+				while (find_token(start, token, &end)) {
+					start = end;
+					report[index] = strtol(token, NULL, 0);
+					++index;
+					++len;
+				}
+
+				if (device->Write(addr, report, len) < 0) {
+					fprintf(stderr, "Failed to Write Report\n");
+					continue;
+				}
+			} else if (input[0] == 'a') {
+				unsigned int bytes = 256;
+				device->GetAttentionReport(NULL, NULL, report, &bytes);
+				print_buffer(report, bytes);
+			} else if (input[0] == 'q') {
+				return;
+			} else {
+				print_cmd_usage();
 			}
-			fprintf(stdout, "\n\n");
 		}
-	} else if (input[0] == 'q') {
-		return 1;
-	} else {
-		print_help();
 	}
-	return 0;
 }
 
 static void cleanup(int status)
@@ -192,37 +198,79 @@ int main(int argc, char ** argv)
 	int index;
 	RMIDevice *device;
 	const char *protocol = "HID";
+	unsigned char report[256];
+	char token[256];
 	static struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"protocol", 1, NULL, 'p'},
+		{"interactive", 0, NULL, 'i'},
+		{"read", 1, NULL, 'r'},
+		{"write", 1, NULL, 'w'},
+		{"firmware-id", 0, NULL, 'f'},
+		{"props", 0, NULL, 'o'},
+		{"attention", 0, NULL, 'a'},
+		{"print-functions", 0, NULL, 'm'},
 		{0, 0, 0, 0},
 	};
+	enum rmihidtool_cmd cmd = RMIHIDTOOL_CMD_INTERACTIVE;
+	unsigned int addr;
+	unsigned int len;
+	char * data;
+	char * start;
+	char * end;
 
 	memset(&sig_cleanup_action, 0, sizeof(struct sigaction));
-        sig_cleanup_action.sa_handler = cleanup;
-        sig_cleanup_action.sa_flags = SA_RESTART;
-        sigaction(SIGINT, &sig_cleanup_action, NULL);
+	sig_cleanup_action.sa_handler = cleanup;
+	sig_cleanup_action.sa_flags = SA_RESTART;
+	sigaction(SIGINT, &sig_cleanup_action, NULL);
 
-        while ((opt = getopt_long(argc, argv, RMI4UPDATE_GETOPTS, long_options, &index)) != -1) {
-                switch (opt) {
-                        case 'h':
-                                printArgsHelp(argv[0]);
-                                return 0;
-                        case 'p':
-                                protocol = optarg;
-                                break;
-                        default:
-                                break;
+	while ((opt = getopt_long(argc, argv, RMI4UPDATE_GETOPTS, long_options, &index)) != -1) {
+		switch (opt) {
+			case 'h':
+				print_help(argv[0]);
+				return 0;
+			case 'p':
+				protocol = optarg;
+				break;
+			case 'i':
+				cmd = RMIHIDTOOL_CMD_INTERACTIVE;
+				break;
+			case 'r':
+				cmd = RMIHIDTOOL_CMD_READ;
+				addr = strtol(optarg, NULL, 0);
+				len = strtol(argv[optind++], NULL, 0);
+				break;
+			case 'w':
+				cmd = RMIHIDTOOL_CMD_WRITE;
+				addr = strtol(optarg, NULL, 0);
+				data = argv[optind++];
+				break;
+			case 'f':
+				cmd = RMIHIDTOOL_CMD_FW_ID;
+				break;
+			case 'o':
+				cmd = RMIHIDTOOL_CMD_PROPS;
+				break;
+			case 'a':
+				cmd = RMIHIDTOOL_CMD_ATTN;
+				break;
+			case 'm':
+				cmd = RMIHIDTOOL_CMD_PRINT_FUNCTIONS;
+				break;
+			default:
+				print_help(argv[0]);
+				return 0;
+				break;
 
-                }
-        }
+		}
+	}
 
 	if (!strncasecmp("hid", protocol, 3)) {
 		device = new HIDDevice();
-        } else {
+	} else {
 		fprintf(stderr, "Invalid Protocol: %s\n", protocol);
 		return -1;
-        }
+	}
 
 	rc = device->Open(argv[optind++]);
 	if (rc) {
@@ -231,22 +279,58 @@ int main(int argc, char ** argv)
 		return 1;
 	}
 
-	device->ScanPDT();
-	device->QueryBasicProperties();
-	device->PrintProperties();
-
 	g_device = device;
 
-	fprintf(stdout, "\n");
-	for (;;) {
-		fprintf(stdout, "\n");
-		print_help();
-		char buf[256];
+	switch (cmd) {
+		case RMIHIDTOOL_CMD_READ:
+			memset(report, 0, sizeof(report));
+			rc = device->Read(addr, report, len);
+			if (rc < 0)
+				fprintf(stderr, "Failed to read report: %d\n", rc);
 
-		if (fgets(buf, 256, stdin)) {
-			if (process(device, buf) == 1)
-				break;
-		}
+			print_buffer(report, len);
+			break;
+		case RMIHIDTOOL_CMD_WRITE:
+			start = data;
+			memset(report, 0, sizeof(report));
+			while (find_token(start, token, &end)) {
+				start = end;
+				report[index++] = (unsigned char)strtol(token, NULL, 0);
+				++len;
+			}
+
+			if (device->Write(addr, report, len) < 0) {
+				fprintf(stderr, "Failed to Write Report\n");
+				return -1;
+			}
+			break;
+		case RMIHIDTOOL_CMD_FW_ID:
+			device->ScanPDT();
+			device->QueryBasicProperties();
+			fprintf(stdout, "firmware id: %lu\n", device->GetFirmwareID());
+			break;
+		case RMIHIDTOOL_CMD_PROPS:
+			device->ScanPDT();
+			device->QueryBasicProperties();
+			device->PrintProperties();
+			break;
+		case RMIHIDTOOL_CMD_ATTN:
+			report_attn = 1;
+			while(report_attn) {
+				unsigned int bytes = 256;
+				device->GetAttentionReport(NULL, NULL, report, &bytes);
+				print_buffer(report, bytes);
+				fprintf(stdout, "\n");
+			}
+			break;
+		case RMIHIDTOOL_CMD_PRINT_FUNCTIONS:
+			device->ScanPDT();
+			device->PrintFunctions();
+			break;
+		case RMIHIDTOOL_CMD_INTERACTIVE:
+		default:
+			interactive(device, report);
+			break;
 	}
 
 	device->Close();

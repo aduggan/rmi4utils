@@ -39,7 +39,7 @@ public:
 	virtual int SetMode(int mode) { return -1; /* Unsupported */ }
 	virtual int WaitForAttention(struct timeval * timeout = NULL, int *sources = NULL) = 0;
 	virtual int GetAttentionReport(struct timeval * timeout, int *sources, unsigned char *buf,
-					int *len)
+					unsigned int *len)
 	{ return -1; /* Unsupported */ }
 	virtual void Close() = 0;
 	virtual void Cancel() { m_bCancel = true; }
@@ -54,6 +54,7 @@ public:
 	int Reset();
 
 	bool GetFunction(RMIFunction &func, int functionNumber);
+	void PrintFunctions();
 
 	void SetBytesPerReadRequest(int bytes) { m_bytesPerReadRequest = bytes; }
 
@@ -87,7 +88,8 @@ protected:
 	int m_page;
  };
 
+/* Utility Functions */
 long long diff_time(struct timespec *start, struct timespec *end);
 int Sleep(int ms);
-
+void print_buffer(const unsigned char *buf, unsigned int len);
 #endif /* _RMIDEVICE_H_ */

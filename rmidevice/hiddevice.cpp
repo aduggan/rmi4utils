@@ -250,14 +250,14 @@ int HIDDevice::WaitForAttention(struct timeval * timeout, int *sources)
 	return GetAttentionReport(timeout, sources, NULL, NULL);
 }
 
-int HIDDevice::GetAttentionReport(struct timeval * timeout, int *sources, unsigned char *buf, int *len)
+int HIDDevice::GetAttentionReport(struct timeval * timeout, int *sources, unsigned char *buf, unsigned int *len)
 {
 	int rc;
 	int interrupt_sources;
 	const unsigned char * queue_report;
 	int bytes = m_inputReportSize;
 
-	if (len && (int)m_inputReportSize < *len) {
+	if (len && m_inputReportSize < *len) {
 		bytes = *len;
 		*len = m_inputReportSize;
 	}

@@ -237,6 +237,18 @@ bool RMIDevice::GetFunction(RMIFunction &func, int functionNumber)
 	return false;
 }
 
+void RMIDevice::PrintFunctions()
+{
+	std::vector<RMIFunction>::iterator funcIter;
+
+	for (funcIter = m_functionList.begin(); funcIter != m_functionList.end(); ++funcIter)
+		fprintf(stdout, "0x%02x (%d) (%d): 0x%02x 0x%02x 0x%02x 0x%02x\n",
+				funcIter->GetFunctionNumber(), funcIter->GetFunctionVersion(),
+				funcIter->GetInterruptSourceCount(), funcIter->GetDataBase(),
+				funcIter->GetControlBase(), funcIter->GetCommandBase(),
+				funcIter->GetQueryBase());
+}
+
 int RMIDevice::ScanPDT()
 {
 	int rc;
@@ -303,4 +315,14 @@ int Sleep(int ms)
 		}
 	}
 	return 0;
+}
+
+void print_buffer(const unsigned char *buf, unsigned int len)
+{
+	for (unsigned int i = 0; i < len; ++i) {
+		fprintf(stdout, "0x%02X ", buf[i]);
+		if (i % 8 == 7)
+			fprintf(stdout, "\n");
+	}
+	fprintf(stdout, "\n");
 }

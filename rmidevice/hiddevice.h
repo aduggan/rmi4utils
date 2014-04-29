@@ -34,7 +34,8 @@ public:
 				 unsigned short len);
 	virtual int SetMode(int mode);
 	virtual int WaitForAttention(struct timeval * timeout = NULL, int *sources = NULL);
-	virtual int GetAttentionReport(struct timeval * timeout, int *sources, unsigned char *buf, int *len);
+	virtual int GetAttentionReport(struct timeval * timeout, int *sources, unsigned char *buf,
+					unsigned int *len);
 	virtual void Close();
 	~HIDDevice() { Close(); }
 
