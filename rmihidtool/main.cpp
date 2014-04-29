@@ -272,6 +272,11 @@ int main(int argc, char ** argv)
 		return -1;
 	}
 
+	if (optind >= argc) {
+		print_help(argv[0]);
+		return -1;
+	}
+
 	rc = device->Open(argv[optind++]);
 	if (rc) {
 		fprintf(stderr, "%s: failed to initialize rmi device (%d): %s\n", argv[0], errno,
