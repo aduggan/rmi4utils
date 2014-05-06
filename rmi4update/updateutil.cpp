@@ -44,7 +44,7 @@ const char *update_error_str[] = {
 	"failed to write initial zeros",				// UPDATE_FAIL_WRITE_INITIAL_ZEROS
 	"failed to write block",					// UPDATE_FAIL_WRITE_BLOCK
 	"failed to write the flash command",				// UPDATE_FAIL_WRITE_FLASH_COMMAND
-	"timeout waiting for idle",					// UPDATE_FAIL_TIMEOUT_WAITING_FOR_IDLE
+	"timeout waiting for attn",					// UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN
 	"failed to write erase all command",				// UPDATE_FAIL_ERASE_ALL
 	"the firmware image is older then the firmware on the device",	// UPDATE_FAIL_FIRMWARE_IMAGE_IS_OLDER
 	"invalid parameter",						// UPDATE_FAIL_INVALID_PARAMETER

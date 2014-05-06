@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "rmi4update.h"
 
@@ -301,7 +302,7 @@ int RMI4Update::EnterFlashProgramming()
 	if (!m_programEnabled)
 		return UPDATE_FAIL_PROGRAMMING_NOT_ENABLED;
 
-	fprintf(stdout, "HOORAY! Programming is enabled!\n");
+	fprintf(stdout, "Programming is enabled.\n");
 	rc = FindUpdateFunctions();
 	if (rc != UPDATE_SUCCESS)
 		return rc;
@@ -382,28 +383,34 @@ int RMI4Update::WaitForIdle(int timeout_ms)
 	tv.tv_usec = (timeout_ms % 1000) * 1000;
 
 	rc = m_device.WaitForAttention(&tv);
-	if (rc > 0) {
-		rc = ReadF34Controls();
-		if (rc != UPDATE_SUCCESS)
-			return rc;
+	if (rc == -ETIMEDOUT)
+		/*
+		 * If for some reason we are not getting attention reports for HID devices
+		 * then we can still continue after the timeout and read F34 status
+		 * but if we have to wait for the timeout to ellapse everytime then this
+		 * will be slow. If this message shows up a lot then something is wrong
+		 * with receiving attention reports and that should be fixed.
+		 */
+		fprintf(stderr, "Timed out waiting for attn report\n");
 
-		if (!m_f34Status && !m_f34Command) {
-			if (!m_programEnabled) {
-				fprintf(stderr, "Bootloader is idle but program_enabled bit isn't set.\n");
-				return UPDATE_FAIL_PROGRAMMING_NOT_ENABLED;
-			} else {
-				return UPDATE_SUCCESS;
-			}
+	rc = ReadF34Controls();
+	if (rc != UPDATE_SUCCESS)
+		return rc;
+
+	if (!m_f34Status && !m_f34Command) {
+		if (!m_programEnabled) {
+			fprintf(stderr, "Bootloader is idle but program_enabled bit isn't set.\n");
+			return UPDATE_FAIL_PROGRAMMING_NOT_ENABLED;
+		} else {
+			return UPDATE_SUCCESS;
 		}
-
-		fprintf(stderr, "ERROR: Waiting for idle status.\n");
-		fprintf(stderr, "Command: %#04x\n", m_f34Command);
-		fprintf(stderr, "Status:  %#04x\n", m_f34Status);
-		fprintf(stderr, "Enabled: %d\n", m_programEnabled);
-		fprintf(stderr, "Idle:    %d\n", !m_f34Command && !m_f34Status);
-
-		return UPDATE_FAIL_NOT_IN_IDLE_STATE;
 	}
-	
-	return UPDATE_FAIL_TIMEOUT;
+
+	fprintf(stderr, "ERROR: Waiting for idle status.\n");
+	fprintf(stderr, "Command: %#04x\n", m_f34Command);
+	fprintf(stderr, "Status:  %#04x\n", m_f34Status);
+	fprintf(stderr, "Enabled: %d\n", m_programEnabled);
+	fprintf(stderr, "Idle:    %d\n", !m_f34Command && !m_f34Status);
+
+	return UPDATE_FAIL_NOT_IN_IDLE_STATE;
 }
