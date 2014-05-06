@@ -28,7 +28,7 @@
 #define RMI_DEVICE_PAGE_SIZE			0x100
 #define RMI_DEVICE_PAGE_SCAN_START		0x00e9
 #define RMI_DEVICE_PAGE_SCAN_END		0x0005
-#define RMI_DEVICE_F01_BASIC_QUERY_LEN		21
+#define RMI_DEVICE_F01_BASIC_QUERY_LEN		11
 #define RMI_DEVICE_F01_PRODUCTINFO_MASK		0x7f
 #define RMI_DEVICE_F01_QRY5_YEAR_MASK		0x1f
 #define RMI_DEVICE_F01_QRY6_MONTH_MASK		0x0f
@@ -102,10 +102,14 @@ int RMIDevice::QueryBasicProperties()
 		 		basicQuery[6] & RMI_DEVICE_F01_QRY6_MONTH_MASK,
 		 		basicQuery[7] & RMI_DEVICE_F01_QRY7_DAY_MASK);
 
-		memcpy(m_productID, &basicQuery[11], RMI_PRODUCT_ID_LENGTH);
+		queryAddr += 11;
+		rc = Read(queryAddr, m_productID, RMI_PRODUCT_ID_LENGTH);
+		if (rc < 0) {
+			fprintf(stderr, "Failed to read the product id: %s\n", strerror(errno));
+			return rc;
+		}
 		m_productID[RMI_PRODUCT_ID_LENGTH] = '\0';
 
-		queryAddr += 11;
 		prodInfoAddr = queryAddr + 6;
 		queryAddr += 10;
 
