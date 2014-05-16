@@ -213,9 +213,9 @@ int main(int argc, char ** argv)
 		{0, 0, 0, 0},
 	};
 	enum rmihidtool_cmd cmd = RMIHIDTOOL_CMD_INTERACTIVE;
-	unsigned int addr;
-	unsigned int len;
-	char * data;
+	unsigned int addr = 0;
+	unsigned int len = 0;
+	char * data = NULL;
 	char * start;
 	char * end;
 
