@@ -34,12 +34,21 @@
 #define RMI_F34_FW_BLOCKS_OFFSET	3
 #define RMI_F34_CONFIG_BLOCKS_OFFSET	5
 
+#define RMI_F34_BLOCK_SIZE_V1_OFFSET	0
+#define RMI_F34_FW_BLOCKS_V1_OFFSET	0
+#define RMI_F34_CONFIG_BLOCKS_V1_OFFSET	2
+
 #define RMI_F34_BLOCK_DATA_OFFSET	2
+#define RMI_F34_BLOCK_DATA_V1_OFFSET	1
 
 #define RMI_F34_COMMAND_MASK		0x0F
 #define RMI_F34_STATUS_MASK		0x07
 #define RMI_F34_STATUS_SHIFT		4
 #define RMI_F34_ENABLED_MASK		0x80
+
+#define RMI_F34_COMMAND_V1_MASK		0x3F
+#define RMI_F34_STATUS_V1_MASK		0x3F
+#define RMI_F34_ENABLED_V1_MASK		0x80
 
 #define RMI_F34_WRITE_FW_BLOCK        0x02
 #define RMI_F34_ERASE_ALL             0x03
@@ -213,25 +222,62 @@ int RMI4Update::ReadF34Queries()
 {
 	int rc;
 	unsigned char idStr[3];
-	unsigned char buf[RMI_F34_QUERY_SIZE];
+	unsigned char buf[8];
 	unsigned short queryAddr = m_f34.GetQueryBase();
+	unsigned short f34Version = m_f34.GetFunctionVersion();
+	unsigned short querySize;
+
+	if (f34Version == 0x1)
+		querySize = 8;
+	else
+		querySize = 2;
 
 	rc = m_device.Read(queryAddr, m_bootloaderID, RMI_BOOTLOADER_ID_SIZE);
 	if (rc < 0)
 		return UPDATE_FAIL_READ_BOOTLOADER_ID;
 
-	queryAddr += RMI_BOOTLOADER_ID_SIZE;
+	if (f34Version == 0x1)
+		++queryAddr;
+	else
+		queryAddr += querySize;
 
-	rc = m_device.Read(queryAddr, buf, RMI_F34_QUERY_SIZE);
-	if (rc < 0)
-		return UPDATE_FAIL_READ_F34_QUERIES;
+	if (f34Version == 0x1) {
+		rc = m_device.Read(queryAddr, buf, 1);
+		if (rc < 0)
+			return UPDATE_FAIL_READ_F34_QUERIES;
 
-	m_hasNewRegmap = buf[0] & RMI_F34_HAS_NEW_REG_MAP;
-	m_unlocked = buf[0] & RMI_F34_IS_UNLOCKED;;
-	m_hasConfigID = buf[0] & RMI_F34_HAS_CONFIG_ID;
-	m_blockSize = extract_short(buf + RMI_F34_BLOCK_SIZE_OFFSET);
-	m_fwBlockCount = extract_short(buf + RMI_F34_FW_BLOCKS_OFFSET);
-	m_configBlockCount = extract_short(buf + RMI_F34_CONFIG_BLOCKS_OFFSET);
+		m_hasNewRegmap = buf[0] & RMI_F34_HAS_NEW_REG_MAP;
+		m_unlocked = buf[0] & RMI_F34_IS_UNLOCKED;;
+		m_hasConfigID = buf[0] & RMI_F34_HAS_CONFIG_ID;
+
+		++queryAddr;
+
+		rc = m_device.Read(queryAddr, buf, 2);
+		if (rc < 0)
+			return UPDATE_FAIL_READ_F34_QUERIES;
+
+		m_blockSize = extract_short(buf + RMI_F34_BLOCK_SIZE_V1_OFFSET);
+
+		++queryAddr;
+
+		rc = m_device.Read(queryAddr, buf, 8);
+		if (rc < 0)
+			return UPDATE_FAIL_READ_F34_QUERIES;
+
+		m_fwBlockCount = extract_short(buf + RMI_F34_FW_BLOCKS_V1_OFFSET);
+		m_configBlockCount = extract_short(buf + RMI_F34_CONFIG_BLOCKS_V1_OFFSET);
+	} else {
+		rc = m_device.Read(queryAddr, buf, RMI_F34_QUERY_SIZE);
+		if (rc < 0)
+			return UPDATE_FAIL_READ_F34_QUERIES;
+
+		m_hasNewRegmap = buf[0] & RMI_F34_HAS_NEW_REG_MAP;
+		m_unlocked = buf[0] & RMI_F34_IS_UNLOCKED;;
+		m_hasConfigID = buf[0] & RMI_F34_HAS_CONFIG_ID;
+		m_blockSize = extract_short(buf + RMI_F34_BLOCK_SIZE_OFFSET);
+		m_fwBlockCount = extract_short(buf + RMI_F34_FW_BLOCKS_OFFSET);
+		m_configBlockCount = extract_short(buf + RMI_F34_CONFIG_BLOCKS_OFFSET);
+	}
 
 	idStr[0] = m_bootloaderID[0];
 	idStr[1] = m_bootloaderID[1];
@@ -247,7 +293,10 @@ int RMI4Update::ReadF34Queries()
 	fprintf(stdout, "F34 config blocks: %d\n", m_configBlockCount);
 	fprintf(stdout, "\n");
 
-	m_f34StatusAddr = m_f34.GetDataBase() + RMI_F34_BLOCK_DATA_OFFSET + m_blockSize;
+	if (f34Version == 0x1)
+		m_f34StatusAddr = m_f34.GetDataBase() + 2;
+	else
+		m_f34StatusAddr = m_f34.GetDataBase() + RMI_F34_BLOCK_DATA_OFFSET + m_blockSize;
 
 	return UPDATE_SUCCESS;
 }
@@ -255,15 +304,26 @@ int RMI4Update::ReadF34Queries()
 int RMI4Update::ReadF34Controls()
 {
 	int rc;
-	unsigned char buf;
+	unsigned char buf[2];
 
-	rc = m_device.Read(m_f34StatusAddr, &buf, 1);
-	if (rc < 0)
-		return UPDATE_FAIL_READ_F34_CONTROLS;
+	if (m_f34.GetFunctionVersion() == 0x1) {
+		rc = m_device.Read(m_f34StatusAddr, buf, 2);
+		if (rc < 0)
+			return UPDATE_FAIL_READ_F34_CONTROLS;
 
-	m_f34Command = buf & RMI_F34_COMMAND_MASK;
-	m_f34Status = (buf >> RMI_F34_STATUS_SHIFT) & RMI_F34_STATUS_MASK;
-	m_programEnabled = !!(buf & RMI_F34_ENABLED_MASK);
+		m_f34Command = buf[0] & RMI_F34_COMMAND_V1_MASK;
+		m_f34Status = buf[1] & RMI_F34_STATUS_V1_MASK;
+		m_programEnabled = !!(buf[1] & RMI_F34_ENABLED_MASK);
+
+	} else {
+		rc = m_device.Read(m_f34StatusAddr, buf, 1);
+		if (rc < 0)
+			return UPDATE_FAIL_READ_F34_CONTROLS;
+
+		m_f34Command = buf[0] & RMI_F34_COMMAND_MASK;
+		m_f34Status = (buf[0] >> RMI_F34_STATUS_SHIFT) & RMI_F34_STATUS_MASK;
+		m_programEnabled = !!(buf[0] & RMI_F34_ENABLED_MASK);
+	}
 	
 	return UPDATE_SUCCESS;
 }
@@ -271,8 +331,12 @@ int RMI4Update::ReadF34Controls()
 int RMI4Update::WriteBootloaderID()
 {
 	int rc;
+	int blockDataOffset = RMI_F34_BLOCK_DATA_OFFSET;
 
-	rc = m_device.Write(m_f34.GetDataBase() + RMI_F34_BLOCK_DATA_OFFSET,
+	if (m_f34.GetFunctionVersion() == 0x1)
+		blockDataOffset = RMI_F34_BLOCK_DATA_V1_OFFSET;
+
+	rc = m_device.Write(m_f34.GetDataBase() + blockDataOffset,
 				m_bootloaderID, RMI_BOOTLOADER_ID_SIZE);
 	if (rc < 0)
 		return UPDATE_FAIL_WRITE_BOOTLOADER_ID;
@@ -337,7 +401,12 @@ int RMI4Update::WriteBlocks(unsigned char *block, unsigned short count, unsigned
 	int blockNum;
 	unsigned char zeros[] = { 0, 0 };
 	int rc;
-	unsigned short addr = m_f34.GetDataBase() + RMI_F34_BLOCK_DATA_OFFSET;
+	unsigned short addr;
+
+	if (m_f34.GetFunctionVersion() == 0x1)
+		addr = m_f34.GetDataBase() + RMI_F34_BLOCK_DATA_V1_OFFSET;
+	else
+		addr = m_f34.GetDataBase() + RMI_F34_BLOCK_DATA_OFFSET;
 
 	rc = m_device.Write(m_f34.GetDataBase(), zeros, 2);
 	if (rc < 0)
@@ -349,7 +418,6 @@ int RMI4Update::WriteBlocks(unsigned char *block, unsigned short count, unsigned
 			fprintf(stderr, "failed to write block %d\n", blockNum);
 			return UPDATE_FAIL_WRITE_BLOCK;
 		}
-
 
 		rc = m_device.Write(m_f34StatusAddr, &cmd, 1);
 		if (rc < 0) {

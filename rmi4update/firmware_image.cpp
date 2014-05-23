@@ -97,11 +97,10 @@ int FirmwareImage::ExtractHeader()
 			m_lockdownData = &m_memBlock[RMI_IMG_LOCKDOWN_V3_OFFSET];
 			break;
 		case 5:
+		case 6:
 			m_lockdownSize = RMI_IMG_LOCKDOWN_V5_SIZE;
 			m_lockdownData = &m_memBlock[RMI_IMG_LOCKDOWN_V5_OFFSET];
 			break;
-		case 6:
-			// TODO: Add support for V6
 		default:
 			return UPDATE_FAIL_UNSUPPORTED_IMAGE_VERSION;
 	}
