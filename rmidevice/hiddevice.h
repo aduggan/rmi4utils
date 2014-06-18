@@ -70,6 +70,7 @@ private:
 
 	int GetReport(int reportid, struct timeval * timeout = NULL);
 	void PrintReport(const unsigned char *report);
+	void ParseReportSizes();
 
 	static const int HID_REPORT_QUEUE_MAX_SIZE = 8;
  };

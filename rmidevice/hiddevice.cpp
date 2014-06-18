@@ -45,6 +45,13 @@ enum rmi_hid_mode_type {
 	HID_RMI4_MODE_NO_PACKED_ATTN_REPORTS    = 2,
 };
 
+enum hid_report_type {
+	HID_REPORT_TYPE_UNKNOWN			= 0x0,
+	HID_REPORT_TYPE_INPUT			= 0x81,
+	HID_REPORT_TYPE_OUTPUT			= 0x91,
+	HID_REPORT_TYPE_FEATURE			= 0xb1,
+};
+
 #define HID_RMI4_REPORT_ID			0
 #define HID_RMI4_READ_INPUT_COUNT		1
 #define HID_RMI4_READ_INPUT_DATA		2
@@ -85,10 +92,7 @@ int HIDDevice::Open(const char * filename)
 	if (rc < 0)
 		return rc;
 
-	/* FIXME: get there from the report descriptor */
-	m_inputReportSize = 30;
-	m_outputReportSize = 25;
-	m_featureReportSize = 2;
+	ParseReportSizes();
 
 	m_inputReport = new unsigned char[m_inputReportSize]();
 	if (!m_inputReport)
@@ -113,6 +117,84 @@ int HIDDevice::Open(const char * filename)
 		return -1;
 
 	return 0;
+}
+
+void HIDDevice::ParseReportSizes()
+{
+	bool isVendorSpecific = false;
+	bool isReport = false;
+	int totalReportSize = 0;
+	int reportSize = 0;
+	int reportCount = 0;
+	enum hid_report_type hidReportType = HID_REPORT_TYPE_UNKNOWN;
+
+	for (unsigned int i = 0; i < m_rptDesc.size; ++i) {
+		if (isVendorSpecific) {
+			if (m_rptDesc.value[i] == 0x85 || m_rptDesc.value[i] == 0xc0) {
+				if (isReport) {
+					// finish up data on the previous report
+					totalReportSize = (reportSize * reportCount) >> 3;
+
+					switch (hidReportType) {
+						case HID_REPORT_TYPE_INPUT:
+							m_inputReportSize = totalReportSize + 1;
+							break;
+						case HID_REPORT_TYPE_OUTPUT:
+							m_outputReportSize = totalReportSize + 1;
+							break;
+						case HID_REPORT_TYPE_FEATURE:
+							m_featureReportSize = totalReportSize + 1;
+							break;
+						case HID_REPORT_TYPE_UNKNOWN:
+						default:
+							break;
+					}
+				}
+
+				// reset values for the new report
+				totalReportSize = 0;
+				reportSize = 0;
+				reportCount = 0;
+				hidReportType = HID_REPORT_TYPE_UNKNOWN;
+
+				if (m_rptDesc.value[i] == 0x85)
+					isReport = true;
+				else
+					isReport = false;
+
+				if (m_rptDesc.value[i] == 0xc0)
+					isVendorSpecific = false;
+			}
+
+			if (isReport) {
+				if (m_rptDesc.value[i] == 0x75) {
+					reportSize = m_rptDesc.value[++i];
+					continue;
+				}
+
+				if (m_rptDesc.value[i] == 0x95) {
+					reportCount = m_rptDesc.value[++i];
+					continue;
+				}
+
+				if (m_rptDesc.value[i] == HID_REPORT_TYPE_INPUT)
+					hidReportType = HID_REPORT_TYPE_INPUT;
+
+				if (m_rptDesc.value[i] == HID_REPORT_TYPE_OUTPUT)
+					hidReportType = HID_REPORT_TYPE_OUTPUT;
+
+				if (m_rptDesc.value[i] == HID_REPORT_TYPE_FEATURE) {
+					hidReportType = HID_REPORT_TYPE_FEATURE;
+				}
+			}
+		}
+
+		if (m_rptDesc.value[i] == 0x06 && m_rptDesc.value[i + 1] == 0x00
+						&& m_rptDesc.value[i + 2] == 0xFF) {
+			isVendorSpecific = true;
+			i += 2;
+		}
+	}
 }
 
 int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
