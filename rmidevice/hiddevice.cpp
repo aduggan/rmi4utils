@@ -199,7 +199,7 @@ void HIDDevice::ParseReportSizes()
 
 int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 {
-	size_t count;
+	ssize_t count;
 	size_t bytesReadPerRequest;
 	size_t bytesInDataReport;
 	size_t totalBytesRead;
@@ -264,7 +264,7 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 
 int HIDDevice::Write(unsigned short addr, const unsigned char *buf, unsigned short len)
 {
-	size_t count;
+	ssize_t count;
 
 	if (!m_deviceOpen)
 		return -1;
@@ -363,7 +363,7 @@ int HIDDevice::GetAttentionReport(struct timeval * timeout, int *sources, unsign
 
 int HIDDevice::GetReport(int reportid, struct timeval * timeout)
 {
-	size_t count = 0;
+	ssize_t count = 0;
 	unsigned char *queue_report;
 	fd_set fds;
 	int rc;
