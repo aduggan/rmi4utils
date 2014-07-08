@@ -64,6 +64,8 @@ enum hid_report_type {
 #define HID_RMI4_ATTN_INTERUPT_SOURCES		1
 #define HID_RMI4_ATTN_DATA			2
 
+#define SYNAPTICS_VENDOR_ID			0x06cb
+
 int HIDDevice::Open(const char * filename)
 {
 	int rc;
@@ -92,23 +94,36 @@ int HIDDevice::Open(const char * filename)
 	if (rc < 0)
 		return rc;
 
+	if (m_info.vendor != SYNAPTICS_VENDOR_ID) {
+		errno = -ENODEV;
+		return -1;
+	}
+
 	ParseReportSizes();
 
 	m_inputReport = new unsigned char[m_inputReportSize]();
-	if (!m_inputReport)
-		return -ENOMEM;
+	if (!m_inputReport) {
+		errno = -ENOMEM;
+		return -1;
+	}
 
 	m_outputReport = new unsigned char[m_outputReportSize]();
-	if (!m_outputReport)
-		return -ENOMEM;
+	if (!m_outputReport) {
+		errno = -ENOMEM;
+		return -1;
+	}
 
 	m_readData = new unsigned char[m_inputReportSize]();
-	if (!m_readData)
-		return -ENOMEM;
+	if (!m_readData) {
+		errno = -ENOMEM;
+		return -1;
+	}
 
 	m_attnReportQueue = new unsigned char[m_inputReportSize * HID_REPORT_QUEUE_MAX_SIZE]();
-	if (!m_attnReportQueue)
-		return -ENOMEM;
+	if (!m_attnReportQueue) {
+		errno = -ENOMEM;
+		return -1;
+	}
 
 	m_deviceOpen = true;
 

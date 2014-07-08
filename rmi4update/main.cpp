@@ -19,23 +19,41 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 #include "hiddevice.h"
 #include "rmi4update.h"
 
-#define RMI4UPDATE_GETOPTS	"hf"
+#define RMI4UPDATE_GETOPTS	"hfd:"
 
 void printHelp(const char *prog_name)
 {
-	fprintf(stdout, "Usage: %s [OPTIONS] DEVICEFILE FIRMWAREFILE\n", prog_name);
+	fprintf(stdout, "Usage: %s [OPTIONS] FIRMWAREFILE\n", prog_name);
 	fprintf(stdout, "\t-h, --help\tPrint this message\n");
 	fprintf(stdout, "\t-f, --force\tForce updating firmware even it the image provided is older\n\t\t\tthen the current firmware on the device.\n");
+	fprintf(stdout, "\t-d, --device\thidraw device file associated with the device being updated.\n");
+}
+
+int UpdateDevice(FirmwareImage & image, bool force, const char * deviceFile) {
+	HIDDevice rmidevice;
+	int rc;
+
+	rc = rmidevice.Open(deviceFile);
+	if (rc)
+		return rc;
+
+	RMI4Update update(rmidevice, image);
+	rc = update.UpdateFirmware(force);
+	if (rc != UPDATE_SUCCESS)
+		return rc;
+
+	return rc;
 }
 
 int main(int argc, char **argv)
 {
 	int rc;
-	HIDDevice rmidevice;
 	FirmwareImage image;
 	int opt;
 	int index;
@@ -45,8 +63,11 @@ int main(int argc, char **argv)
 	static struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"force", 0, NULL, 'f'},
+		{"device", 1, NULL, 'd'},
 		{0, 0, 0, 0},
 	};
+	struct dirent * devDirEntry;
+	DIR * devDir;
 
 	while ((opt = getopt_long(argc, argv, RMI4UPDATE_GETOPTS, long_options, &index)) != -1) {
 		switch (opt) {
@@ -56,26 +77,20 @@ int main(int argc, char **argv)
 			case 'f':
 				force = true;
 				break;
+			case 'd':
+				deviceName = optarg;
+				break;
 			default:
 				break;
 
 		}
 	}
 
-	if (optind < argc)
-		deviceName = argv[optind++];
-	else
-		return -1;
-
-	if (optind < argc)
+	if (optind < argc) {
 		firmwareName = argv[optind];
-	else
+	} else {
+		printHelp(argv[0]);
 		return -1;
-
-	rc = rmidevice.Open(deviceName);
-	if (rc) {
-		fprintf(stderr, "Failed to open rmi device: %s\n", strerror(errno));
-		return rc;
 	}
 
 	rc = image.Initialize(firmwareName);
@@ -84,13 +99,32 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	if (deviceName) {
+		return UpdateDevice(image, force, deviceName);
+	} else {
+		char buf[PATH_MAX];
+		bool found = false;
 
+		devDir = opendir("/dev");
+		if (!devDir)
+			return -1;
 
-	RMI4Update update(rmidevice, image);
-	rc = update.UpdateFirmware(force);
-	if (rc != UPDATE_SUCCESS) {
-		fprintf(stderr, "Firmware update failed because: %s\n", update_err_to_string(rc));
-		return 1;
+		while ((devDirEntry = readdir(devDir)) != NULL) {
+			if (strstr(devDirEntry->d_name, "hidraw")) {
+				snprintf(buf, PATH_MAX, "/dev/%s", devDirEntry->d_name);
+				rc = UpdateDevice(image, force, buf);
+				if (rc != 0) {
+					continue;
+				} else {
+					found = true;
+					break;
+				}
+			}
+		}
+		closedir(devDir);
+
+		if (!found)
+			return rc;
 	}
 
 	return 0;
