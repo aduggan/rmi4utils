@@ -1,13 +1,17 @@
 CXX = g++
 CPPFLAGS = -I../include -I./include -I../rmidevice
 CXXFLAGS = -g -Wall
-LDFLAGS = -static -L.
+LDFLAGS = -L.
 LIBS =  -lrmidevice
 LIBDIR = ../rmidevice
 LIBNAME = librmidevice.a
 RMIHIDTOOLSRC = main.cpp
 RMIHIDTOOLOBJ = $(RMIHIDTOOLSRC:.cpp=.o)
 PROGNAME = rmihidtool
+STATIC_BUILD ?= y
+ifeq ($(STATIC_BUILD),y)
+LDFLAGS += -static
+endif
 
 all: $(PROGNAME)
 

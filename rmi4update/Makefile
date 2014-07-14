@@ -1,13 +1,17 @@
 CXX = g++
 CPPFLAGS = -I../include -I./include -I../rmidevice
 CXXFLAGS = -g -Wall
-LDFLAGS = -static -L.
+LDFLAGS = -L.
 LIBS =  -lrmidevice
 LIBDIR = ../rmidevice
 LIBNAME = librmidevice.a
 RMI4UPDATESRC = main.cpp firmware_image.cpp rmi4update.cpp updateutil.cpp
 RMI4UPDATEOBJ = $(RMI4UPDATESRC:.cpp=.o)
 PROGNAME = rmi4update
+STATIC_BUILD ?= y
+ifeq ($(STATIC_BUILD),y)
+LDFLAGS += -static
+endif
 
 all: $(PROGNAME)
 
