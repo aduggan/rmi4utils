@@ -1,5 +1,4 @@
 CXX = g++
-LD = $(CXX)
 CPPFLAGS = -I../include -I./include -I../rmidevice
 CXXFLAGS = -g -Wall
 LDFLAGS = -static -L.
@@ -13,7 +12,7 @@ PROGNAME = rmi4update
 all: $(PROGNAME)
 
 $(PROGNAME): $(RMI4UPDATEOBJ)
-	$(LD) $(LDFLAGS) $(RMI4UPDATEOBJ) -L$(LIBDIR) $(LIBS) -o $(PROGNAME)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(RMI4UPDATEOBJ) -L$(LIBDIR) $(LIBS) -o $(PROGNAME)
 
 clean:
 	rm -f $(RMI4UPDATEOBJ) $(PROGNAME)

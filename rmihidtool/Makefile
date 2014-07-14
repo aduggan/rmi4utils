@@ -1,5 +1,4 @@
 CXX = g++
-LD = $(CXX)
 CPPFLAGS = -I../include -I./include -I../rmidevice
 CXXFLAGS = -g -Wall
 LDFLAGS = -static -L.
@@ -13,7 +12,7 @@ PROGNAME = rmihidtool
 all: $(PROGNAME)
 
 $(PROGNAME): $(RMIHIDTOOLOBJ)
-	$(LD) $(LDFLAGS) $(RMIHIDTOOLOBJ) -L$(LIBDIR) $(LIBS) -o $(PROGNAME)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(RMIHIDTOOLOBJ) -L$(LIBDIR) $(LIBS) -o $(PROGNAME)
 
 clean:
 	rm -f $(RMIHIDTOOLOBJ) $(PROGNAME)
