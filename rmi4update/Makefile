@@ -1,7 +1,7 @@
 CXX = g++
 LD = $(CXX)
-INCLUDES = -I../include -I./include -I../rmidevice
-CXXFLAGS = -g -Wall $(INCLUDES)
+CPPFLAGS = -I../include -I./include -I../rmidevice
+CXXFLAGS = -g -Wall
 LDFLAGS = -static -L.
 LIBS =  -lrmidevice
 LIBDIR = ../rmidevice

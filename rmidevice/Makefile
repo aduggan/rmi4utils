@@ -2,8 +2,8 @@ CXX = g++
 LD = $(CXX)
 AR = ar
 RANLIB = ranlib
-INCLUDES = -I../include -I./include
-CXXFLAGS = -fPIC -g -Wall $(INCLUDES)
+CPPFLAGS = -I../include -I./include
+CXXFLAGS = -fPIC -g -Wall
 RMIDEVICESRC = rmifunction.cpp rmidevice.cpp hiddevice.cpp
 RMIDEVICEOBJ = $(RMIDEVICESRC:.cpp=.o)
 LIBNAME = librmidevice.so
