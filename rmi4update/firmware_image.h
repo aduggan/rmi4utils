@@ -48,7 +48,7 @@
 class FirmwareImage
 {
 public:
-	FirmwareImage() : m_firmwareData(NULL), m_configData(NULL), m_lockdownData(NULL),
+	FirmwareImage() : m_firmwareBuildID(0), m_packageID(0), m_firmwareData(NULL), m_configData(NULL), m_lockdownData(NULL),
 				m_memBlock(NULL)
 	{}
 	int Initialize(const char * filename);

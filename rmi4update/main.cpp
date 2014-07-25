@@ -35,7 +35,8 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "\t-d, --device\thidraw device file associated with the device being updated.\n");
 }
 
-int UpdateDevice(FirmwareImage & image, bool force, const char * deviceFile) {
+int UpdateDevice(FirmwareImage & image, bool force, const char * deviceFile)
+{
 	HIDDevice rmidevice;
 	int rc;
 

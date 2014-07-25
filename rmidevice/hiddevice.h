@@ -24,8 +24,8 @@
 class HIDDevice : public RMIDevice
 {
 public:
-	HIDDevice(int bytesPerReadRequest = 0) : RMIDevice(bytesPerReadRequest), m_headIdx(0),
-			m_tailIdx(0), m_deviceOpen(false), m_attnQueueCount(0)
+	HIDDevice() : RMIDevice(), m_inputReport(NULL), m_outputReport(NULL), m_attnReportQueue(NULL), m_headIdx(0),
+			m_tailIdx(0), m_readData(NULL), m_deviceOpen(false), m_attnQueueCount(0)
 	{}
 	virtual int Open(const char * filename);
 	virtual int Read(unsigned short addr, unsigned char *buf,

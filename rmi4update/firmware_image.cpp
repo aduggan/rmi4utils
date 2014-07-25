@@ -19,6 +19,7 @@
 #include <fstream>
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "firmware_image.h"
 
@@ -53,6 +54,7 @@ int FirmwareImage::Initialize(const char * filename)
 	if (!ifsFile)
 		return UPDATE_FAIL_OPEN_FIRMWARE_IMAGE;
 
+	ifsFile.seekg(0, ios::end);
 	m_imageSize = (unsigned long)ifsFile.tellg();
 	m_memBlock = new unsigned char[m_imageSize];
 	ifsFile.seekg(0, ios::beg);
