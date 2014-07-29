@@ -107,7 +107,7 @@ int RMI4Update::UpdateFirmware(bool force)
 	if (rc != UPDATE_SUCCESS)
 		return rc;
 
-	rc = m_firmwareImage.VerifyImage(GetFirmwareSize(), GetConfigSize());
+	rc = m_firmwareImage.VerifyImageMatchesDevice(GetFirmwareSize(), GetConfigSize());
 	if (rc != UPDATE_SUCCESS)
 		return rc;
 

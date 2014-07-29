@@ -52,7 +52,8 @@ public:
 				m_memBlock(NULL)
 	{}
 	int Initialize(const char * filename);
-	int VerifyImage(unsigned short deviceFirmwareSize, unsigned short deviceConfigSize);
+	int VerifyImageMatchesDevice(unsigned short deviceFirmwareSize,
+					unsigned short deviceConfigSize);
 	unsigned char * GetFirmwareData() { return m_firmwareData; }
 	unsigned char * GetConfigData() { return m_configData; }
 	unsigned char * GetLockdownData() { return m_lockdownData; }
@@ -65,7 +66,6 @@ public:
 
 private:
 	unsigned long Checksum(unsigned short * data, unsigned long len);
-	int ExtractHeader();
 	void PrintHeaderInfo();
 
 private:

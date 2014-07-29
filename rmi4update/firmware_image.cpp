@@ -45,8 +45,6 @@ unsigned long FirmwareImage::Checksum(unsigned short * data, unsigned long len)
 
 int FirmwareImage::Initialize(const char * filename)
 {
-	int rc;
-
 	if (!filename)
 		return UPDATE_FAIL_INVALID_PARAMETER;
 
@@ -60,19 +58,29 @@ int FirmwareImage::Initialize(const char * filename)
 	ifsFile.seekg(0, ios::beg);
 	ifsFile.read((char*)m_memBlock, m_imageSize);
 
-	rc = ExtractHeader();
-	if (rc != UPDATE_SUCCESS)
-		return rc;
+	if (m_imageSize < 0x100)
+		return UPDATE_FAIL_VERIFY_IMAGE;
 
-	fprintf(stdout, "Firmware Header:\n");
-	PrintHeaderInfo();
-
-	return UPDATE_SUCCESS;
-}
-
-int FirmwareImage::ExtractHeader()
-{
 	m_checksum = extract_long(&m_memBlock[RMI_IMG_CHECKSUM_OFFSET]);
+
+	unsigned long imageSizeMinusChecksum = m_imageSize - 4;
+	if ((imageSizeMinusChecksum % 2) != 0)
+		/*
+		 * Since the header size is fixed and the firmware is
+		 * in 16 byte blocks a valid image size should always be
+		 * divisible by 2.
+		 */
+		return UPDATE_FAIL_VERIFY_IMAGE;
+
+	unsigned long calculated_checksum = Checksum((uint16_t *)&(m_memBlock[4]),
+		(unsigned short)imageSizeMinusChecksum >> 1);
+
+	if (m_checksum != calculated_checksum) {
+		fprintf(stderr, "Firmware image checksum verification failed, saw 0x%08lX, calculated 0x%08lX\n",
+			m_checksum, calculated_checksum);
+		return UPDATE_FAIL_VERIFY_CHECKSUM;
+	}
+
 	m_io = m_memBlock[RMI_IMG_IO_OFFSET];
 	m_bootloaderVersion = m_memBlock[RMI_IMG_BOOTLOADER_VERSION_OFFSET];
 	m_firmwareSize = extract_long(&m_memBlock[RMI_IMG_IMAGE_SIZE_OFFSET]);
@@ -83,7 +91,8 @@ int FirmwareImage::ExtractHeader()
 	}
 	memcpy(m_productID, &m_memBlock[RMI_IMG_PRODUCT_ID_OFFSET], RMI_PRODUCT_ID_LENGTH);
 	m_productID[RMI_PRODUCT_ID_LENGTH] = 0;
-	memcpy(m_productInfo, &m_memBlock[RMI_IMG_PRODUCT_INFO_OFFSET], RMI_IMG_PRODUCT_INFO_LENGTH);
+	memcpy(m_productInfo, &m_memBlock[RMI_IMG_PRODUCT_INFO_OFFSET],
+		RMI_IMG_PRODUCT_INFO_LENGTH);
 
 	m_firmwareData = &m_memBlock[RMI_IMG_FW_OFFSET];
 	m_configData = &m_memBlock[RMI_IMG_FW_OFFSET + m_firmwareSize];
@@ -107,6 +116,9 @@ int FirmwareImage::ExtractHeader()
 			return UPDATE_FAIL_UNSUPPORTED_IMAGE_VERSION;
 	}
 
+	fprintf(stdout, "Firmware Header:\n");
+	PrintHeaderInfo();
+
 	return UPDATE_SUCCESS;
 }
 
@@ -124,20 +136,9 @@ void FirmwareImage::PrintHeaderInfo()
 	fprintf(stdout, "\n");
 }
 
-int FirmwareImage::VerifyImage(unsigned short deviceFirmwareSize, unsigned short deviceConfigSize)
+int FirmwareImage::VerifyImageMatchesDevice(unsigned short deviceFirmwareSize,
+						unsigned short deviceConfigSize)
 {
-	if (m_imageSize < 0x100)
-		return UPDATE_FAIL_VERIFY_IMAGE;
-
-	unsigned long calculated_checksum = Checksum((uint16_t *)&(m_memBlock[4]), 
-		(unsigned short)(m_imageSize - 4) >> 1);
-
-	if (m_checksum != calculated_checksum) {
-		fprintf(stderr, "Firmware image checksum verification failed, saw 0x%08lX, calculated 0x%08lX\n",
-			m_checksum, calculated_checksum);
-		return UPDATE_FAIL_VERIFY_CHECKSUM;
-	}
-
 	if (m_firmwareSize != deviceFirmwareSize) {
 		fprintf(stderr, "Firmware image size verfication failed, size in image %ld did "
 			"not match device size %d\n", m_firmwareSize, deviceFirmwareSize);
