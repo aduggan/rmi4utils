@@ -1,6 +1,6 @@
 CXX = g++
 CPPFLAGS += -I../include -I./include -I../rmidevice
-CXXFLAGS += -g -Wall
+CXXFLAGS += -Wall
 LDFLAGS += -L.
 LIBS =  -lrmidevice
 LIBDIR = ../rmidevice
