@@ -91,8 +91,7 @@ int FirmwareImage::Initialize(const char * filename)
 	}
 	memcpy(m_productID, &m_memBlock[RMI_IMG_PRODUCT_ID_OFFSET], RMI_PRODUCT_ID_LENGTH);
 	m_productID[RMI_PRODUCT_ID_LENGTH] = 0;
-	memcpy(m_productInfo, &m_memBlock[RMI_IMG_PRODUCT_INFO_OFFSET],
-		RMI_IMG_PRODUCT_INFO_LENGTH);
+	m_productInfo = extract_short(&m_memBlock[RMI_IMG_PRODUCT_INFO_OFFSET]);
 
 	m_firmwareData = &m_memBlock[RMI_IMG_FW_OFFSET];
 	m_configData = &m_memBlock[RMI_IMG_FW_OFFSET + m_firmwareSize];
@@ -129,10 +128,10 @@ void FirmwareImage::PrintHeaderInfo()
 	fprintf(stdout, "Config Size:\t\t%ld\n", m_configSize);
 	fprintf(stdout, "Lockdown Size:\t\t%ld\n", m_lockdownSize);
 	fprintf(stdout, "Firmware Build ID:\t%ld\n", m_firmwareBuildID);
-	fprintf(stdout, "Package ID:\t\t%d\n", *((unsigned short*)&m_packageID));
+	fprintf(stdout, "Package ID:\t\t%d\n", m_packageID);
 	fprintf(stdout, "Bootloader Version:\t%d\n", m_bootloaderVersion);
 	fprintf(stdout, "Product ID:\t\t%s\n", m_productID);
-	fprintf(stdout, "Product Info:\t\t%d\n", *((unsigned short*)&m_productInfo));
+	fprintf(stdout, "Product Info:\t\t%d\n", m_productInfo);
 	fprintf(stdout, "\n");
 }
 

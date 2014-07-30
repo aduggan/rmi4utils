@@ -29,8 +29,6 @@
 #define RMI_IMG_PACKAGE_ID_OFFSET		0x1A
 #define RMI_IMG_FW_BUILD_ID_OFFSET		0x50
 
-#define RMI_IMG_PRODUCT_INFO_LENGTH		2
-
 #define RMI_IMG_PRODUCT_ID_OFFSET		0x10
 #define RMI_IMG_PRODUCT_INFO_OFFSET		0x1E
 
@@ -79,7 +77,7 @@ private:
 	unsigned char m_bootloaderVersion;
 	unsigned char m_io;
 	char m_productID[RMI_PRODUCT_ID_LENGTH + 1];
-	char m_productInfo[RMI_IMG_PRODUCT_INFO_LENGTH];
+	unsigned short m_productInfo;
 
 	unsigned char * m_firmwareData;
 	unsigned char * m_configData;
