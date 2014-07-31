@@ -1,4 +1,4 @@
-CXX = g++
+CXX ?= g++
 CPPFLAGS += -I../include -I./include -I../rmidevice
 CXXFLAGS += -Wall
 LDFLAGS += -L.

@@ -1,6 +1,6 @@
-CXX = g++
-AR = ar
-RANLIB = ranlib
+CXX ?= g++
+AR ?= ar
+RANLIB ?= ranlib
 CPPFLAGS += -I../include -I./include
 CXXFLAGS += -fPIC -Wall
 RMIDEVICESRC = rmifunction.cpp rmidevice.cpp hiddevice.cpp
