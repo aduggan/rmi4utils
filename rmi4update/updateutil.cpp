@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#include <sys/types.h>
+
 #include "updateutil.h"
 
 const char *update_error_str[] = {
@@ -68,4 +70,16 @@ unsigned short extract_short(const unsigned char *data)
 {
 	return (unsigned long)data [0]
 		+ (unsigned long)data [1] * 0x100;
+}
+
+const char * StripPath(char * path, ssize_t size)
+{
+	int i;
+	char * str;
+
+	for (i = size - 1, str = &path[size - 1]; i > 0; --i, --str)
+		if (path[i - 1] == '/')
+			break;
+
+	return str;
 }
