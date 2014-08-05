@@ -25,11 +25,13 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <time.h>
+#include <string>
+#include <sstream>
 
 #include "hiddevice.h"
 #include "rmi4update.h"
 
-#define RMI4UPDATE_GETOPTS	"hfd:"
+#define RMI4UPDATE_GETOPTS	"hfd:p"
 
 void printHelp(const char *prog_name)
 {
@@ -37,6 +39,7 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "\t-h, --help\tPrint this message\n");
 	fprintf(stdout, "\t-f, --force\tForce updating firmware even it the image provided is older\n\t\t\tthen the current firmware on the device.\n");
 	fprintf(stdout, "\t-d, --device\thidraw device file associated with the device being updated.\n");
+	fprintf(stdout, "\t-p, --fw-props\tPrint the firmware properties.\n");
 }
 
 int UpdateDevice(FirmwareImage & image, bool force, const char * deviceFile)
@@ -166,6 +169,28 @@ void RebindDriver(const char * hidraw)
 		hidDeviceString, strerror(errno));
 }
 
+int GetFirmwareProps(const char * deviceFile, std::string &props)
+{
+	HIDDevice rmidevice;
+	int rc = UPDATE_SUCCESS;
+	std::stringstream ss;
+
+	rc = rmidevice.Open(deviceFile);
+	if (rc)
+		return rc;
+
+	rmidevice.ScanPDT();
+	rmidevice.QueryBasicProperties();
+
+	ss << rmidevice.GetFirmwareVersionMajor() << "."
+		<< rmidevice.GetFirmwareVersionMinor() << "."
+		<< std::hex << rmidevice.GetFirmwareID();
+
+	props = ss.str();
+
+	return rc;
+}
+
 int main(int argc, char **argv)
 {
 	int rc;
@@ -179,10 +204,12 @@ int main(int argc, char **argv)
 		{"help", 0, NULL, 'h'},
 		{"force", 0, NULL, 'f'},
 		{"device", 1, NULL, 'd'},
+		{"fw-props", 0, NULL, 'p'},
 		{0, 0, 0, 0},
 	};
 	struct dirent * devDirEntry;
 	DIR * devDir;
+	bool printFirmwareProps = false;
 
 	while ((opt = getopt_long(argc, argv, RMI4UPDATE_GETOPTS, long_options, &index)) != -1) {
 		switch (opt) {
@@ -195,10 +222,29 @@ int main(int argc, char **argv)
 			case 'd':
 				deviceName = optarg;
 				break;
+			case 'p':
+				printFirmwareProps = true;
+				break;
 			default:
 				break;
 
 		}
+	}
+
+	if (printFirmwareProps) {
+		std::string props;
+
+		if (!deviceName) {
+			fprintf(stderr, "Specifiy which device to query\n");
+			return 1;
+		}
+		rc = GetFirmwareProps(deviceName, props);
+		if (rc) {
+			fprintf(stderr, "Failed to read properties from device: %s\n", update_err_to_string(rc));
+			return 1;
+		}
+		fprintf(stdout, "%s\n", props.c_str());
+		return 0;
 	}
 
 	if (optind < argc) {
