@@ -85,12 +85,9 @@ int WriteDeviceNameToFile(const char * file, const char * str)
 }
 
 /*
- * We need to rebind the driver to the device after firmware update for two reasons
- * 	a) The parameters of the device may have changed in the new firmware so the
- *	   driver should redo the initialization to read the new values.
- *	b) Kernel commit 0f5a24c6 will now power down the device once we close the
- *	   file descriptor for the hidraw device file. Reloading the driver powers the
- *	   device back on.
+ * We need to rebind the driver to the device after firmware update because the
+ * parameters of the device may have changed in the new firmware and the
+ * driver should redo the initialization ensure it is using the new values.
  */
 void RebindDriver(const char * hidraw)
 {
