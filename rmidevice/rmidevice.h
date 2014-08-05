@@ -44,6 +44,8 @@ public:
 	virtual void Cancel() { m_bCancel = true; }
 
 	unsigned long GetFirmwareID() { return m_buildID; }
+	int GetFirmwareVersionMajor() { return m_firmwareVersionMajor; }
+	int GetFirmwareVersionMinor() { return m_firmwareVersionMinor; }
 	virtual int QueryBasicProperties();
 	
 	int SetRMIPage(unsigned char page);
@@ -67,12 +69,14 @@ protected:
 	bool m_hasQuery42;
 	char m_dom[11];
 	unsigned char m_productID[RMI_PRODUCT_ID_LENGTH + 1];
-	unsigned short m_productInfo;
 	unsigned short m_packageID;
 	unsigned short m_packageRev;
 	unsigned long m_buildID;
 	unsigned char m_sensorID;
 	unsigned long m_boardID;
+
+	int m_firmwareVersionMajor;
+	int m_firmwareVersionMinor;
 
 	bool m_hasDS4Queries;
 	bool m_hasMultiPhysical;

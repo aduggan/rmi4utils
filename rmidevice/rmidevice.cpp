@@ -19,6 +19,7 @@
 #include <time.h>
 #include <string.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include "rmidevice.h"
 
@@ -29,7 +30,6 @@
 #define RMI_DEVICE_PAGE_SCAN_START		0x00e9
 #define RMI_DEVICE_PAGE_SCAN_END		0x0005
 #define RMI_DEVICE_F01_BASIC_QUERY_LEN		11
-#define RMI_DEVICE_F01_PRODUCTINFO_MASK		0x7f
 #define RMI_DEVICE_F01_QRY5_YEAR_MASK		0x1f
 #define RMI_DEVICE_F01_QRY6_MONTH_MASK		0x0f
 #define RMI_DEVICE_F01_QRY7_DAY_MASK		0x1f
@@ -94,8 +94,8 @@ int RMIDevice::QueryBasicProperties()
 		m_hasAdjustableDoze = basicQuery[1] & RMI_DEVICE_F01_QRY1_HAS_ADJ_DOZE;
 		m_hasAdjustableDozeHoldoff = basicQuery[1] & RMI_DEVICE_F01_QRY1_HAS_ADJ_DOZE_HOFF;
 		m_hasQuery42 = basicQuery[1] & RMI_DEVICE_F01_QRY1_HAS_PROPS_2;
-		m_productInfo = ((basicQuery[2] & RMI_DEVICE_F01_PRODUCTINFO_MASK) << 7) |
-				(basicQuery[3] & RMI_DEVICE_F01_PRODUCTINFO_MASK);
+		m_firmwareVersionMajor = basicQuery[2];
+		m_firmwareVersionMinor = basicQuery[3];
 
 		snprintf(m_dom, sizeof(m_dom), "20%02d/%02d/%02d",
 				basicQuery[5] & RMI_DEVICE_F01_QRY5_YEAR_MASK,
@@ -197,7 +197,7 @@ void RMIDevice::PrintProperties()
 	fprintf(stdout, "Has Query 42?:\t\t%d\n", m_hasQuery42);
 	fprintf(stdout, "Date of Manufacturer:\t%s\n", m_dom);
 	fprintf(stdout, "Product ID:\t\t%s\n", m_productID);
-	fprintf(stdout, "Product Info:\t\t%d\n", m_productInfo);
+	fprintf(stdout, "Firmware Version:\t%d.%d\n", m_firmwareVersionMajor, m_firmwareVersionMinor);
 	fprintf(stdout, "Package ID:\t\t%d\n", m_packageID);
 	fprintf(stdout, "Package Rev:\t\t%d\n", m_packageRev);
 	fprintf(stdout, "Build ID:\t\t%ld\n", m_buildID);
