@@ -197,7 +197,7 @@ int main(int argc, char **argv)
 	FirmwareImage image;
 	int opt;
 	int index;
-	const char *deviceName = NULL;
+	char *deviceName = NULL;
 	const char *firmwareName = NULL;
 	bool force = false;
 	static struct option long_options[] = {
@@ -261,7 +261,15 @@ int main(int argc, char **argv)
 	}
 
 	if (deviceName) {
-		return UpdateDevice(image, force, deviceName);
+		char * rawDevice;
+		rc = UpdateDevice(image, force, deviceName);
+		if (rc)
+			return rc;
+
+		rawDevice = strcasestr(deviceName, "hidraw");
+		if (rawDevice)
+			RebindDriver(rawDevice);
+		return rc;
 	} else {
 		char rawDevice[PATH_MAX];
 		char deviceFile[PATH_MAX];
