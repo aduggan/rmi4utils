@@ -54,6 +54,8 @@ public:
 	void PrintProperties();
 	int Reset();
 
+	bool InBootloader();
+
 	bool GetFunction(RMIFunction &func, int functionNumber);
 	void PrintFunctions();
 

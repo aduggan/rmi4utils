@@ -292,6 +292,22 @@ int RMIDevice::ScanPDT()
 	return 0;
 }
 
+bool RMIDevice::InBootloader()
+{
+	RMIFunction f01;
+	if (GetFunction(f01, 0x01)) {
+		int rc;
+		unsigned char status;
+
+		rc = Read(f01.GetDataBase(), &status, 1);
+		if (rc < 0)
+			return true;
+
+		return !!(status & 0x40);
+	}
+	return true;
+}
+
 long long diff_time(struct timespec *start, struct timespec *end)
 {
 	long long diff;

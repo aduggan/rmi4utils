@@ -183,6 +183,9 @@ int GetFirmwareProps(const char * deviceFile, std::string &props)
 		<< rmidevice.GetFirmwareVersionMinor() << "."
 		<< std::hex << rmidevice.GetFirmwareID();
 
+	if (rmidevice.InBootloader())
+		ss << " bootloader";
+
 	props = ss.str();
 
 	return rc;
