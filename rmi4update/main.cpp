@@ -176,7 +176,7 @@ int GetFirmwareProps(const char * deviceFile, std::string &props)
 	if (rc)
 		return rc;
 
-	rmidevice.ScanPDT();
+	rmidevice.ScanPDT(0x1);
 	rmidevice.QueryBasicProperties();
 
 	ss << rmidevice.GetFirmwareVersionMajor() << "."

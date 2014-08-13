@@ -253,7 +253,7 @@ void RMIDevice::PrintFunctions()
 				funcIter->GetQueryBase());
 }
 
-int RMIDevice::ScanPDT()
+int RMIDevice::ScanPDT(int endFunc)
 {
 	int rc;
 	unsigned int page;
@@ -283,6 +283,9 @@ int RMIDevice::ScanPDT()
 
 			m_functionList.push_back(func);
 			found = true;
+
+			if (func.GetFunctionNumber() == endFunc)
+				return 0;
 		}
 
 		if (!found)
