@@ -80,6 +80,8 @@ int RMIDevice::QueryBasicProperties()
 	unsigned short prodInfoAddr;
 	RMIFunction f01;
 
+	SetRMIPage(0x00);
+
 	if (GetFunction(f01, 1)) {
 		queryAddr = f01.GetQueryBase();
 
