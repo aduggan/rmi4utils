@@ -73,7 +73,7 @@ int FirmwareImage::Initialize(const char * filename)
 		return UPDATE_FAIL_VERIFY_IMAGE;
 
 	unsigned long calculated_checksum = Checksum((uint16_t *)&(m_memBlock[4]),
-		(unsigned short)imageSizeMinusChecksum >> 1);
+		imageSizeMinusChecksum >> 1);
 
 	if (m_checksum != calculated_checksum) {
 		fprintf(stderr, "Firmware image checksum verification failed, saw 0x%08lX, calculated 0x%08lX\n",
@@ -135,18 +135,18 @@ void FirmwareImage::PrintHeaderInfo()
 	fprintf(stdout, "\n");
 }
 
-int FirmwareImage::VerifyImageMatchesDevice(unsigned short deviceFirmwareSize,
-						unsigned short deviceConfigSize)
+int FirmwareImage::VerifyImageMatchesDevice(unsigned long deviceFirmwareSize,
+						unsigned long deviceConfigSize)
 {
 	if (m_firmwareSize != deviceFirmwareSize) {
 		fprintf(stderr, "Firmware image size verfication failed, size in image %ld did "
-			"not match device size %d\n", m_firmwareSize, deviceFirmwareSize);
+			"not match device size %ld\n", m_firmwareSize, deviceFirmwareSize);
 		return UPDATE_FAIL_VERIFY_FIRMWARE_SIZE;
 	}
 
 	if (m_configSize != deviceConfigSize) {
 		fprintf(stderr, "Firmware image size verfication failed, size in image %ld did "
-			"not match device size %d\n", m_firmwareSize, deviceConfigSize);
+			"not match device size %ld\n", m_firmwareSize, deviceConfigSize);
 		return UPDATE_FAIL_VERIFY_CONFIG_SIZE;
 	}
 	

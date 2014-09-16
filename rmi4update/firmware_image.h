@@ -50,8 +50,8 @@ public:
 				m_memBlock(NULL)
 	{}
 	int Initialize(const char * filename);
-	int VerifyImageMatchesDevice(unsigned short deviceFirmwareSize,
-					unsigned short deviceConfigSize);
+	int VerifyImageMatchesDevice(unsigned long deviceFirmwareSize,
+					unsigned long deviceConfigSize);
 	unsigned char * GetFirmwareData() { return m_firmwareData; }
 	unsigned char * GetConfigData() { return m_configData; }
 	unsigned char * GetLockdownData() { return m_lockdownData; }
