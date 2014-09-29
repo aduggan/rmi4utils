@@ -262,6 +262,7 @@ int RMIDevice::ScanPDT(int endFunc, int endPage)
 	unsigned int maxPage;
 	unsigned int addr;
 	unsigned char entry[RMI_DEVICE_PDT_ENTRY_SIZE];
+	unsigned int interruptCount = 0;
 
 	maxPage = (unsigned int)((endPage < 0) ? RMI_DEVICE_MAX_PAGE : endPage);
 
@@ -282,11 +283,12 @@ int RMIDevice::ScanPDT(int endFunc, int endPage)
 				return rc;
 			}
 			
-			RMIFunction func(entry, page_start);
+			RMIFunction func(entry, page_start, interruptCount);
 			if (func.GetFunctionNumber() == 0)
 				break;
 
 			m_functionList.push_back(func);
+			interruptCount += func.GetInterruptSourceCount();
 			found = true;
 
 			if (func.GetFunctionNumber() == endFunc)
@@ -296,6 +298,8 @@ int RMIDevice::ScanPDT(int endFunc, int endPage)
 		if (!found && (endPage < 0))
 			break;
 	}
+
+	m_numInterruptRegs = (interruptCount + 7) / 8;
 
 	return 0;
 }

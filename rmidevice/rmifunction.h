@@ -22,7 +22,7 @@ class RMIFunction
 {
 public:
 	RMIFunction() {}
-	RMIFunction(const unsigned char * pdtEntry, unsigned short pageBase);
+	RMIFunction(const unsigned char * pdtEntry, unsigned short pageBase, unsigned int interruptCount);
 	unsigned short GetQueryBase() { return m_queryBase; }
 	unsigned short GetCommandBase() { return m_commandBase; }
 	unsigned short GetControlBase() { return m_controlBase; }
@@ -30,6 +30,8 @@ public:
 	unsigned char GetInterruptSourceCount() { return m_interruptSourceCount; }
 	unsigned char GetFunctionNumber() { return m_functionNumber; }
 	unsigned char GetFunctionVersion() { return m_functionVersion; }
+	unsigned char GetInterruptRegNum() { return m_interruptRegNum; }
+	unsigned char GetInterruptMask() { return m_interruptMask; }
 
 private:
 	unsigned short m_queryBase;
@@ -39,6 +41,8 @@ private:
 	unsigned char m_interruptSourceCount;
 	unsigned char m_functionNumber;
 	unsigned char m_functionVersion;
+	unsigned char m_interruptRegNum;
+	unsigned char m_interruptMask;
 };
 
 #endif // _RMIFUNCTION_H_
