@@ -282,7 +282,7 @@ int RMIDevice::ScanPDT(int endFunc, int endPage)
 				return rc;
 			}
 			
-			RMIFunction func(entry);
+			RMIFunction func(entry, page_start);
 			if (func.GetFunctionNumber() == 0)
 				break;
 

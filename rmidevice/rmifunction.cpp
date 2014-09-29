@@ -27,13 +27,13 @@
 #define RMI_FUNCTION_VERSION_MASK		0x60
 #define RMI_FUNCTION_INTERRUPT_SOURCES_MASK	0x7
 
-RMIFunction::RMIFunction(const unsigned char * pdtEntry)
+RMIFunction::RMIFunction(const unsigned char * pdtEntry, unsigned short pageBase)
 {
 	if (pdtEntry) {
-		m_queryBase = pdtEntry[RMI_FUNCTION_QUERY_OFFSET];
-		m_commandBase = pdtEntry[RMI_FUNCTION_COMMAND_OFFSET];
-		m_controlBase = pdtEntry[RMI_FUNCTION_CONTROL_OFFSET];
-		m_dataBase = pdtEntry[RMI_FUNCTION_DATA_OFFSET];
+		m_queryBase = pdtEntry[RMI_FUNCTION_QUERY_OFFSET] + pageBase;
+		m_commandBase = pdtEntry[RMI_FUNCTION_COMMAND_OFFSET] + pageBase;
+		m_controlBase = pdtEntry[RMI_FUNCTION_CONTROL_OFFSET] + pageBase;
+		m_dataBase = pdtEntry[RMI_FUNCTION_DATA_OFFSET] + pageBase;
 		m_interruptSourceCount = pdtEntry[RMI_FUNCTION_INTERRUPT_SOURCES_OFFSET]
 						& RMI_FUNCTION_INTERRUPT_SOURCES_MASK;
 		m_functionNumber = pdtEntry[RMI_FUNCTION_NUMBER];

@@ -22,7 +22,7 @@ class RMIFunction
 {
 public:
 	RMIFunction() {}
-	RMIFunction(const unsigned char * pdtEntry);
+	RMIFunction(const unsigned char * pdtEntry, unsigned short pageBase);
 	unsigned short GetQueryBase() { return m_queryBase; }
 	unsigned short GetCommandBase() { return m_commandBase; }
 	unsigned short GetControlBase() { return m_controlBase; }
