@@ -84,7 +84,7 @@
  */
 #define RMI_F01_CRTL0_NOSLEEP_BIT	(1 << 2)
 
-int RMI4Update::UpdateFirmware(bool force)
+int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 {
 	struct timespec start;
 	struct timespec end;
@@ -124,7 +124,7 @@ int RMI4Update::UpdateFirmware(bool force)
 		}
 	}
 
-	if (m_unlocked) {
+	if (performLockdown && m_unlocked) {
 		if (m_firmwareImage.GetLockdownData()) {
 			fprintf(stdout, "Writing lockdown...\n");
 			clock_gettime(CLOCK_MONOTONIC, &start);

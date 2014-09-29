@@ -29,7 +29,7 @@ public:
 	RMI4Update(RMIDevice & device, FirmwareImage & firmwareImage) : m_device(device), 
 			m_firmwareImage(firmwareImage)
 	{}
-	int UpdateFirmware(bool force = false);
+	int UpdateFirmware(bool force = false, bool performLockdown = false);
 
 private:
 	int FindUpdateFunctions();
