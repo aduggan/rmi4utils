@@ -50,7 +50,7 @@ public:
 	
 	int SetRMIPage(unsigned char page);
 	
-	int ScanPDT(int endFunc = 0);
+	int ScanPDT(int endFunc = 0, int endPage = -1);
 	void PrintProperties();
 	int Reset();
 
