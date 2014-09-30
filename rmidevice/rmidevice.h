@@ -50,7 +50,7 @@ public:
 	
 	int SetRMIPage(unsigned char page);
 	
-	int ScanPDT(int endFunc = 0);
+	int ScanPDT(int endFunc = 0, int endPage = -1);
 	void PrintProperties();
 	int Reset();
 
@@ -60,6 +60,8 @@ public:
 	void PrintFunctions();
 
 	void SetBytesPerReadRequest(int bytes) { m_bytesPerReadRequest = bytes; }
+
+	unsigned int GetNumInterruptRegs() { return m_numInterruptRegs; }
 
 protected:
 	std::vector<RMIFunction> m_functionList;
@@ -91,6 +93,8 @@ protected:
 	bool m_bCancel;
 	int m_bytesPerReadRequest;
 	int m_page;
+
+	unsigned int m_numInterruptRegs;
  };
 
 /* Utility Functions */

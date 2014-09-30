@@ -255,16 +255,20 @@ void RMIDevice::PrintFunctions()
 				funcIter->GetQueryBase());
 }
 
-int RMIDevice::ScanPDT(int endFunc)
+int RMIDevice::ScanPDT(int endFunc, int endPage)
 {
 	int rc;
 	unsigned int page;
+	unsigned int maxPage;
 	unsigned int addr;
 	unsigned char entry[RMI_DEVICE_PDT_ENTRY_SIZE];
+	unsigned int interruptCount = 0;
+
+	maxPage = (unsigned int)((endPage < 0) ? RMI_DEVICE_MAX_PAGE : endPage);
 
 	m_functionList.clear();
 
-	for (page = 0; page < RMI_DEVICE_MAX_PAGE; ++page) {
+	for (page = 0; page < maxPage; ++page) {
 		unsigned int page_start = RMI_DEVICE_PAGE_SIZE * page;
 		unsigned int pdt_start = page_start + RMI_DEVICE_PAGE_SCAN_START;
 		unsigned int pdt_end = page_start + RMI_DEVICE_PAGE_SCAN_END;
@@ -279,20 +283,23 @@ int RMIDevice::ScanPDT(int endFunc)
 				return rc;
 			}
 			
-			RMIFunction func(entry);
+			RMIFunction func(entry, page_start, interruptCount);
 			if (func.GetFunctionNumber() == 0)
 				break;
 
 			m_functionList.push_back(func);
+			interruptCount += func.GetInterruptSourceCount();
 			found = true;
 
 			if (func.GetFunctionNumber() == endFunc)
 				return 0;
 		}
 
-		if (!found)
+		if (!found && (endPage < 0))
 			break;
 	}
+
+	m_numInterruptRegs = (interruptCount + 7) / 8;
 
 	return 0;
 }

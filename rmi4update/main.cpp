@@ -31,7 +31,7 @@
 #include "hiddevice.h"
 #include "rmi4update.h"
 
-#define RMI4UPDATE_GETOPTS	"hfd:p"
+#define RMI4UPDATE_GETOPTS	"hfd:pl"
 
 void printHelp(const char *prog_name)
 {
@@ -40,9 +40,10 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "\t-f, --force\tForce updating firmware even it the image provided is older\n\t\t\tthen the current firmware on the device.\n");
 	fprintf(stdout, "\t-d, --device\thidraw device file associated with the device being updated.\n");
 	fprintf(stdout, "\t-p, --fw-props\tPrint the firmware properties.\n");
+	fprintf(stdout, "\t-l, --lockdown\tPerform lockdown.\n");
 }
 
-int UpdateDevice(FirmwareImage & image, bool force, const char * deviceFile)
+int UpdateDevice(FirmwareImage & image, bool force, bool performLockdown, const char * deviceFile)
 {
 	HIDDevice rmidevice;
 	int rc;
@@ -52,7 +53,7 @@ int UpdateDevice(FirmwareImage & image, bool force, const char * deviceFile)
 		return rc;
 
 	RMI4Update update(rmidevice, image);
-	rc = update.UpdateFirmware(force);
+	rc = update.UpdateFirmware(force, performLockdown);
 	if (rc != UPDATE_SUCCESS)
 		return rc;
 
@@ -205,11 +206,13 @@ int main(int argc, char **argv)
 		{"force", 0, NULL, 'f'},
 		{"device", 1, NULL, 'd'},
 		{"fw-props", 0, NULL, 'p'},
+		{"lockdown", 0, NULL, 'l'},
 		{0, 0, 0, 0},
 	};
 	struct dirent * devDirEntry;
 	DIR * devDir;
 	bool printFirmwareProps = false;
+	bool performLockdown = false;
 
 	while ((opt = getopt_long(argc, argv, RMI4UPDATE_GETOPTS, long_options, &index)) != -1) {
 		switch (opt) {
@@ -224,6 +227,9 @@ int main(int argc, char **argv)
 				break;
 			case 'p':
 				printFirmwareProps = true;
+				break;
+			case 'l':
+				performLockdown = true;
 				break;
 			default:
 				break;
@@ -262,7 +268,7 @@ int main(int argc, char **argv)
 
 	if (deviceName) {
 		char * rawDevice;
-		rc = UpdateDevice(image, force, deviceName);
+		rc = UpdateDevice(image, force, performLockdown, deviceName);
 		if (rc)
 			return rc;
 
@@ -283,7 +289,7 @@ int main(int argc, char **argv)
 			if (strstr(devDirEntry->d_name, "hidraw")) {
 				strncpy(rawDevice, devDirEntry->d_name, PATH_MAX);
 				snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
-				rc = UpdateDevice(image, force, deviceFile);
+				rc = UpdateDevice(image, force, performLockdown, deviceFile);
 				if (rc != 0) {
 					continue;
 				} else {
