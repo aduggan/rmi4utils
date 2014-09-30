@@ -97,7 +97,7 @@ void SignalHandler(int p_signame)
 
 int main(int argc, char **argv)
 {
-	int rc;
+	int rc = 0;
 	int opt;
 	int index;
 	char *deviceName = NULL;
