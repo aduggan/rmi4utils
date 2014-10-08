@@ -323,9 +323,11 @@ int main(int argc, char ** argv)
 			report_attn = 1;
 			while(report_attn) {
 				unsigned int bytes = 256;
-				device->GetAttentionReport(NULL, NULL, report, &bytes);
-				print_buffer(report, bytes);
-				fprintf(stdout, "\n");
+				rc = device->GetAttentionReport(NULL, NULL, report, &bytes);
+				if (rc > 0) {
+					print_buffer(report, bytes);
+					fprintf(stdout, "\n");
+				}
 			}
 			break;
 		case RMIHIDTOOL_CMD_PRINT_FUNCTIONS:
