@@ -248,9 +248,11 @@ void RMIDevice::PrintFunctions()
 	std::vector<RMIFunction>::iterator funcIter;
 
 	for (funcIter = m_functionList.begin(); funcIter != m_functionList.end(); ++funcIter)
-		fprintf(stdout, "0x%02x (%d) (%d): 0x%02x 0x%02x 0x%02x 0x%02x\n",
+		fprintf(stdout, "0x%02x (%d) (%d) (0x%x): 0x%02x 0x%02x 0x%02x 0x%02x\n",
 				funcIter->GetFunctionNumber(), funcIter->GetFunctionVersion(),
-				funcIter->GetInterruptSourceCount(), funcIter->GetDataBase(),
+				funcIter->GetInterruptSourceCount(),
+				funcIter->GetInterruptMask(),
+				funcIter->GetDataBase(),
 				funcIter->GetControlBase(), funcIter->GetCommandBase(),
 				funcIter->GetQueryBase());
 }
