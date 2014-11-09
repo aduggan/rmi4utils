@@ -119,8 +119,8 @@ int HIDDevice::Open(const char * filename)
 		return -1;
 	}
 
-	m_attnReportQueue = new unsigned char[m_inputReportSize * HID_REPORT_QUEUE_MAX_SIZE]();
-	if (!m_attnReportQueue) {
+	m_attnData = new unsigned char[m_inputReportSize]();
+	if (!m_attnData) {
 		errno = -ENOMEM;
 		return -1;
 	}
@@ -221,6 +221,7 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 	size_t bytesPerRequest;
 	size_t bytesWritten;
 	size_t bytesToRequest;
+	int reportId;
 	int rc;
 
 	if (!m_deviceOpen)
@@ -262,8 +263,8 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 
 		bytesReadPerRequest = 0;
 		while (bytesReadPerRequest < bytesToRequest) {
-			rc = GetReport(RMI_READ_DATA_REPORT_ID);
-			if (rc > 0) {
+			rc = GetReport(&reportId);
+			if (rc > 0 && reportId == RMI_READ_DATA_REPORT_ID) {
 				bytesInDataReport = m_readData[HID_RMI4_READ_INPUT_COUNT];
 				memcpy(buf + bytesReadPerRequest, &m_readData[HID_RMI4_READ_INPUT_DATA],
 					bytesInDataReport);
@@ -338,51 +339,51 @@ void HIDDevice::Close()
 	m_outputReport = NULL;
 	delete[] m_readData;
 	m_readData = NULL;
-	delete[] m_attnReportQueue;
-	m_attnReportQueue = NULL;
+	delete[] m_attnData;
+	m_attnData = NULL;
 }
 
-int HIDDevice::WaitForAttention(struct timeval * timeout, int *sources)
+int HIDDevice::WaitForAttention(struct timeval * timeout, unsigned int source_mask)
 {
-	return GetAttentionReport(timeout, sources, NULL, NULL);
+	return GetAttentionReport(timeout, source_mask, NULL, NULL);
 }
 
-int HIDDevice::GetAttentionReport(struct timeval * timeout, int *sources, unsigned char *buf, unsigned int *len)
+int HIDDevice::GetAttentionReport(struct timeval * timeout, unsigned int source_mask,
+					unsigned char *buf, unsigned int *len)
 {
-	int rc;
-	int interrupt_sources;
-	const unsigned char * queue_report;
+	int rc = 0;
 	int bytes = m_inputReportSize;
+	int reportId;
 
 	if (len && m_inputReportSize < *len) {
 		bytes = *len;
 		*len = m_inputReportSize;
 	}
 
-	rc = GetReport(RMI_ATTN_REPORT_ID, timeout);
-	if (rc > 0) {
-		queue_report = m_attnReportQueue
-					+ m_inputReportSize * m_tailIdx;
-		interrupt_sources = queue_report[HID_RMI4_ATTN_INTERUPT_SOURCES];
-		if (buf)
-			memcpy(buf, queue_report, bytes);
-		m_tailIdx = (m_tailIdx + 1) & (HID_REPORT_QUEUE_MAX_SIZE - 1);
-		--m_attnQueueCount;
-		if (sources)
-			*sources = interrupt_sources;
-		return rc;
+	// Assume the Linux implementation of select with timeout set to the
+	// time remaining.
+	while (!timeout || (timeout->tv_sec != 0 || timeout->tv_usec != 0)) {
+		rc = GetReport(&reportId, timeout);
+		if (rc > 0) {
+			if (reportId == RMI_ATTN_REPORT_ID) {
+				if (buf)
+					memcpy(buf, m_attnData, bytes);
+				if (source_mask & m_attnData[HID_RMI4_ATTN_INTERUPT_SOURCES])
+					return rc;
+			}
+		} else {
+			return rc;
+		}
 	}
 
 	return rc;
 }
 
-int HIDDevice::GetReport(int reportid, struct timeval * timeout)
+int HIDDevice::GetReport(int *reportId, struct timeval * timeout)
 {
 	ssize_t count = 0;
-	unsigned char *queue_report;
 	fd_set fds;
 	int rc;
-	int report_count = 0;
 
 	if (!m_deviceOpen)
 		return -1;
@@ -415,23 +416,19 @@ int HIDDevice::GetReport(int reportid, struct timeval * timeout)
 					break;
 			}
 		}
-
-		if (m_inputReport[HID_RMI4_REPORT_ID] == RMI_ATTN_REPORT_ID) {
-			queue_report = m_attnReportQueue
-					+ m_inputReportSize * m_headIdx;
-			memcpy(queue_report, m_inputReport, count);
-			m_headIdx = (m_headIdx + 1) & (HID_REPORT_QUEUE_MAX_SIZE - 1);
-			++m_attnQueueCount;
-		} else if (m_inputReport[HID_RMI4_REPORT_ID] == RMI_READ_DATA_REPORT_ID) {
-			memcpy(m_readData, m_inputReport, count);
-			m_dataBytesRead = count;
-		}
-		++report_count;
-
-		if (m_inputReport[HID_RMI4_REPORT_ID] == reportid)
-			break;
+		break;
 	}
-	return report_count;
+
+	if (reportId)
+		*reportId = m_inputReport[HID_RMI4_REPORT_ID];
+
+	if (m_inputReport[HID_RMI4_REPORT_ID] == RMI_ATTN_REPORT_ID) {
+		memcpy(m_attnData, m_inputReport, count);
+	} else if (m_inputReport[HID_RMI4_REPORT_ID] == RMI_READ_DATA_REPORT_ID) {
+		memcpy(m_readData, m_inputReport, count);
+		m_dataBytesRead = count;
+	}
+	return 1;
 }
 
 void HIDDevice::PrintReport(const unsigned char *report)

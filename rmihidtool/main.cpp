@@ -168,7 +168,9 @@ void interactive(RMIDevice * device, unsigned char *report)
 				}
 			} else if (input[0] == 'a') {
 				unsigned int bytes = 256;
-				device->GetAttentionReport(NULL, NULL, report, &bytes);
+				device->GetAttentionReport(NULL,
+						RMI_INTERUPT_SOURCES_ALL_MASK,
+						report, &bytes);
 				print_buffer(report, bytes);
 			} else if (input[0] == 'q') {
 				return;
@@ -323,7 +325,9 @@ int main(int argc, char ** argv)
 			report_attn = 1;
 			while(report_attn) {
 				unsigned int bytes = 256;
-				rc = device->GetAttentionReport(NULL, NULL, report, &bytes);
+				rc = device->GetAttentionReport(NULL,
+						RMI_INTERUPT_SOURCES_ALL_MASK,
+						report, &bytes);
 				if (rc > 0) {
 					print_buffer(report, bytes);
 					fprintf(stdout, "\n");

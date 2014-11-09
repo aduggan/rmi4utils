@@ -24,8 +24,8 @@
 class HIDDevice : public RMIDevice
 {
 public:
-	HIDDevice() : RMIDevice(), m_inputReport(NULL), m_outputReport(NULL), m_attnReportQueue(NULL), m_headIdx(0),
-			m_tailIdx(0), m_readData(NULL), m_deviceOpen(false), m_attnQueueCount(0)
+	HIDDevice() : RMIDevice(), m_inputReport(NULL), m_outputReport(NULL), m_attnData(NULL),
+			m_readData(NULL), m_deviceOpen(false)
 	{}
 	virtual int Open(const char * filename);
 	virtual int Read(unsigned short addr, unsigned char *buf,
@@ -33,9 +33,10 @@ public:
 	virtual int Write(unsigned short addr, const unsigned char *buf,
 				 unsigned short len);
 	virtual int SetMode(int mode);
-	virtual int WaitForAttention(struct timeval * timeout = NULL, int *sources = NULL);
-	virtual int GetAttentionReport(struct timeval * timeout, int *sources, unsigned char *buf,
-					unsigned int *len);
+	virtual int WaitForAttention(struct timeval * timeout = NULL,
+					unsigned int source_mask = RMI_INTERUPT_SOURCES_ALL_MASK);
+	virtual int GetAttentionReport(struct timeval * timeout, unsigned int source_mask,
+					unsigned char *buf, unsigned int *len);
 	virtual void Close();
 	~HIDDevice() { Close(); }
 
@@ -48,9 +49,7 @@ private:
 	unsigned char *m_inputReport;
 	unsigned char *m_outputReport;
 
-	unsigned char *m_attnReportQueue;
-	int m_headIdx;
-	int m_tailIdx;
+	unsigned char *m_attnData;
 	unsigned char *m_readData;
 	int m_dataBytesRead;
 
@@ -60,19 +59,15 @@ private:
 
 	bool m_deviceOpen;
 
-	int m_attnQueueCount;
-
 	enum mode_type {
 		HID_RMI4_MODE_MOUSE			= 0,
 		HID_RMI4_MODE_ATTN_REPORTS		= 1,
 		HID_RMI4_MODE_NO_PACKED_ATTN_REPORTS	= 2,
 	};
 
-	int GetReport(int reportid, struct timeval * timeout = NULL);
+	int GetReport(int *reportId, struct timeval * timeout = NULL);
 	void PrintReport(const unsigned char *report);
 	void ParseReportSizes();
-
-	static const int HID_REPORT_QUEUE_MAX_SIZE = 8;
  };
 
 #endif /* _HIDDEVICE_H_ */

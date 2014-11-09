@@ -25,6 +25,8 @@
 
 #define RMI_PRODUCT_ID_LENGTH		10
 
+#define RMI_INTERUPT_SOURCES_ALL_MASK	0xFFFFFFFF
+
 class RMIDevice
 {
 public:
@@ -36,9 +38,10 @@ public:
 	virtual int Write(unsigned short addr, const unsigned char *data,
 				 unsigned short len) = 0;
 	virtual int SetMode(int mode) { return -1; /* Unsupported */ }
-	virtual int WaitForAttention(struct timeval * timeout = NULL, int *sources = NULL) = 0;
-	virtual int GetAttentionReport(struct timeval * timeout, int *sources, unsigned char *buf,
-					unsigned int *len)
+	virtual int WaitForAttention(struct timeval * timeout = NULL,
+			unsigned int source_mask = RMI_INTERUPT_SOURCES_ALL_MASK) = 0;
+	virtual int GetAttentionReport(struct timeval * timeout, unsigned int source_mask,
+					unsigned char *buf, unsigned int *len)
 	{ return -1; /* Unsupported */ }
 	virtual void Close() = 0;
 	virtual void Cancel() { m_bCancel = true; }
