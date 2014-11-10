@@ -450,7 +450,7 @@ int RMI4Update::WaitForIdle(int timeout_ms)
 	tv.tv_sec = timeout_ms / 1000;
 	tv.tv_usec = (timeout_ms % 1000) * 1000;
 
-	rc = m_device.WaitForAttention(&tv);
+	rc = m_device.WaitForAttention(&tv, m_f34.GetInterruptMask());
 	if (rc == -ETIMEDOUT)
 		/*
 		 * If for some reason we are not getting attention reports for HID devices
