@@ -32,6 +32,7 @@ public:
 	int UpdateFirmware(bool force = false, bool performLockdown = false);
 
 private:
+	int DisableNonessentialInterupts();
 	int FindUpdateFunctions();
 	int ReadF34Queries();
 	int ReadF34Controls();

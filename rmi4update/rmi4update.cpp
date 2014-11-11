@@ -103,6 +103,10 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 	fprintf(stdout, "Device Properties:\n");
 	m_device.PrintProperties();
 
+	rc = DisableNonessentialInterupts();
+	if (rc != UPDATE_SUCCESS)
+		return rc;
+
 	rc = ReadF34Queries();
 	if (rc != UPDATE_SUCCESS)
 		return rc;
@@ -202,6 +206,18 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 
 	return UPDATE_SUCCESS;
 
+}
+
+int RMI4Update::DisableNonessentialInterupts()
+{
+	int rc;
+	unsigned char interruptEnabeMask = m_f34.GetInterruptMask() | m_f01.GetInterruptMask();
+
+	rc = m_device.Write(m_f01.GetControlBase() + 1, &interruptEnabeMask, 1);
+	if (rc < 0)
+		return rc;
+
+	return UPDATE_SUCCESS;
 }
 
 int RMI4Update::FindUpdateFunctions()
