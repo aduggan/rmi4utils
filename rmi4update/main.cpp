@@ -31,7 +31,11 @@
 #include "hiddevice.h"
 #include "rmi4update.h"
 
-#define RMI4UPDATE_GETOPTS	"hfd:pl"
+#define VERSION_MAJOR		1
+#define VERSION_MINOR		0
+#define VERSION_SUBMINOR	0
+
+#define RMI4UPDATE_GETOPTS	"hfd:plv"
 
 void printHelp(const char *prog_name)
 {
@@ -41,6 +45,13 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "\t-d, --device\thidraw device file associated with the device being updated.\n");
 	fprintf(stdout, "\t-p, --fw-props\tPrint the firmware properties.\n");
 	fprintf(stdout, "\t-l, --lockdown\tPerform lockdown.\n");
+	fprintf(stdout, "\t-v, --version\tPrint version number.\n");
+}
+
+void printVersion()
+{
+	fprintf(stdout, "rmi4update version %d.%d.%d\n",
+		VERSION_MAJOR, VERSION_MINOR, VERSION_SUBMINOR);
 }
 
 int UpdateDevice(FirmwareImage & image, bool force, bool performLockdown, const char * deviceFile)
@@ -207,6 +218,7 @@ int main(int argc, char **argv)
 		{"device", 1, NULL, 'd'},
 		{"fw-props", 0, NULL, 'p'},
 		{"lockdown", 0, NULL, 'l'},
+		{"version", 0, NULL, 'v'},
 		{0, 0, 0, 0},
 	};
 	struct dirent * devDirEntry;
@@ -231,6 +243,9 @@ int main(int argc, char **argv)
 			case 'l':
 				performLockdown = true;
 				break;
+			case 'v':
+				printVersion();
+				return 0;
 			default:
 				break;
 
