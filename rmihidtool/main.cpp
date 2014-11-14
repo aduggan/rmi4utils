@@ -85,10 +85,8 @@ int find_token(char * input, char * result, char ** endpp)
 	}
 
 	while (input[i] != '\0') {
-		++i;
-		if (input[i] == ' ') {
+		if (input[++i] == ' ')
 			break;
-		}
 	}
 	end = &input[i];
 
@@ -97,12 +95,10 @@ int find_token(char * input, char * result, char ** endpp)
 
 	*endpp = end;
 	strncpy(result, start, end - start);
-	result[end - start + 1] = '\0';
+	result[end - start] = '\0';
 
 	return 1;
 }
-
-
 
 void interactive(RMIDevice * device, unsigned char *report)
 {
@@ -157,8 +153,7 @@ void interactive(RMIDevice * device, unsigned char *report)
 				memset(report, 0, 256);
 				while (find_token(start, token, &end)) {
 					start = end;
-					report[index] = strtol(token, NULL, 0);
-					++index;
+					report[index++] = strtol(token, NULL, 0);
 					++len;
 				}
 
@@ -220,6 +215,7 @@ int main(int argc, char ** argv)
 	char * data = NULL;
 	char * start;
 	char * end;
+	int i = 0;
 
 	memset(&sig_cleanup_action, 0, sizeof(struct sigaction));
 	sig_cleanup_action.sa_handler = cleanup;
@@ -298,11 +294,12 @@ int main(int argc, char ** argv)
 			print_buffer(report, len);
 			break;
 		case RMIHIDTOOL_CMD_WRITE:
+			i = 0;
 			start = data;
 			memset(report, 0, sizeof(report));
 			while (find_token(start, token, &end)) {
 				start = end;
-				report[index++] = (unsigned char)strtol(token, NULL, 0);
+				report[i++] = (unsigned char)strtol(token, NULL, 0);
 				++len;
 			}
 
