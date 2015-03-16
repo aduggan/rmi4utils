@@ -124,6 +124,8 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 	if (!force && m_firmwareImage.HasIO()) {
 		if (m_firmwareImage.GetFirmwareID() <= m_device.GetFirmwareID()) {
 			m_device.Reset();
+			fprintf(stderr, "Firmware image (%ld) is not newer then the firmware on the device (%ld)\n",
+				m_firmwareImage.GetFirmwareID(), m_device.GetFirmwareID());
 			return UPDATE_FAIL_FIRMWARE_IMAGE_IS_OLDER;
 		}
 	}
