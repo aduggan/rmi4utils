@@ -33,7 +33,7 @@
 
 #define VERSION_MAJOR		1
 #define VERSION_MINOR		0
-#define VERSION_SUBMINOR	0
+#define VERSION_SUBMINOR	1
 
 #define RMI4UPDATE_GETOPTS	"hfd:plv"
 
