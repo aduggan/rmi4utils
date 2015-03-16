@@ -53,7 +53,10 @@ int FirmwareImage::Initialize(const char * filename)
 		return UPDATE_FAIL_OPEN_FIRMWARE_IMAGE;
 
 	ifsFile.seekg(0, ios::end);
-	m_imageSize = (unsigned long)ifsFile.tellg();
+	m_imageSize = ifsFile.tellg();
+	if (m_imageSize < 0)
+		return UPDATE_FAIL_OPEN_FIRMWARE_IMAGE;
+
 	m_memBlock = new unsigned char[m_imageSize];
 	ifsFile.seekg(0, ios::beg);
 	ifsFile.read((char*)m_memBlock, m_imageSize);

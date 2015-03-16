@@ -71,7 +71,7 @@ private:
 	unsigned long m_firmwareSize;
 	unsigned long m_configSize;
 	unsigned long m_lockdownSize;
-	unsigned long m_imageSize;
+	long m_imageSize;
 	unsigned long m_firmwareBuildID;
 	unsigned short m_packageID;
 	unsigned char m_bootloaderVersion;
