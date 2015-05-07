@@ -42,6 +42,8 @@ public:
 	virtual void RebindDriver();
 	~HIDDevice() { Close(); }
 
+	virtual void PrintDeviceInfo();
+
 private:
 	int m_fd;
 

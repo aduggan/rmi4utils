@@ -487,6 +487,14 @@ void HIDDevice::PrintReport(const unsigned char *report)
 	fprintf(stdout, "\n\n");
 }
 
+// Print protocol specific device information
+void HIDDevice::PrintDeviceInfo()
+{
+	fprintf(stdout, "HID device info:\nBus: %s Vendor: 0x%04x Product: 0x%04x\n",
+		m_info.bustype == BUS_I2C ? "I2C" : "USB", m_info.vendor, m_info.product);
+	fprintf(stdout, "Report sizes: input: %ld output: %ld\n", m_inputReportSize, m_outputReportSize);
+}
+
 bool WriteDeviceNameToFile(const char * file, const char * str)
 {
 	int fd;

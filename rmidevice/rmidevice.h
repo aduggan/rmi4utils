@@ -56,6 +56,7 @@ public:
 	
 	int ScanPDT(int endFunc = 0, int endPage = -1);
 	void PrintProperties();
+	virtual void PrintDeviceInfo() = 0;
 	int Reset();
 
 	bool InBootloader();
