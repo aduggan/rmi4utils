@@ -71,113 +71,6 @@ int UpdateDevice(FirmwareImage & image, bool force, bool performLockdown, const 
 	return rc;
 }
 
-int WriteDeviceNameToFile(const char * file, const char * str)
-{
-	int fd;
-	ssize_t size;
-
-	fd = open(file, O_WRONLY);
-	if (fd < 0)
-		return UPDATE_FAIL;
-
-	for (;;) {
-		size = write(fd, str, 19);
-		if (size < 0) {
-			if (errno == EINTR)
-				continue;
-
-			return UPDATE_FAIL;
-		}
-		break;
-	}
-
-	close(fd);
-
-	return UPDATE_SUCCESS;
-}
-
-/*
- * We need to rebind the driver to the device after firmware update because the
- * parameters of the device may have changed in the new firmware and the
- * driver should redo the initialization ensure it is using the new values.
- */
-void RebindDriver(const char * hidraw)
-{
-	int rc;
-	ssize_t size;
-	char bindFile[PATH_MAX];
-	char unbindFile[PATH_MAX];
-	char deviceLink[PATH_MAX];
-	char driverName[PATH_MAX];
-	char driverLink[PATH_MAX];
-	char linkBuf[PATH_MAX];
-	char hidDeviceString[20];
-	int i;
-
-	snprintf(unbindFile, PATH_MAX, "/sys/class/hidraw/%s/device/driver/unbind", hidraw);
-	snprintf(deviceLink, PATH_MAX, "/sys/class/hidraw/%s/device", hidraw);
-
-	size = readlink(deviceLink, linkBuf, PATH_MAX);
-	if (size < 0) {
-		fprintf(stderr, "Failed to find the HID string for this device: %s\n",
-			hidraw);
-		return;
-	}
-	linkBuf[size] = 0;
-
-	strncpy(hidDeviceString, StripPath(linkBuf, size), 20);
-
-	snprintf(driverLink, PATH_MAX, "/sys/class/hidraw/%s/device/driver", hidraw);
-
-	size = readlink(driverLink, linkBuf, PATH_MAX);
-	if (size < 0) {
-		fprintf(stderr, "Failed to find the HID string for this device: %s\n",
-			hidraw);
-		return;
-	}
-	linkBuf[size] = 0;
-
-	strncpy(driverName, StripPath(linkBuf, size), PATH_MAX);
-
-	snprintf(bindFile, PATH_MAX, "/sys/bus/hid/drivers/%s/bind", driverName);
-
-	rc = WriteDeviceNameToFile(unbindFile, hidDeviceString);
-	if (rc != UPDATE_SUCCESS) {
-		fprintf(stderr, "Failed to unbind HID device %s: %s\n",
-			hidDeviceString, strerror(errno));
-		return;
-	}
-
-	for (i = 0;; ++i) {
-		struct timespec req;
-		struct timespec rem;
-
-		rc = WriteDeviceNameToFile(bindFile, hidDeviceString);
-		if (rc == UPDATE_SUCCESS)
-			return;
-
-		if (i <= 4)
-			break;
-
-		/* device might not be ready yet to bind to */
-		req.tv_sec = 0;
-		req.tv_nsec = 100 * 1000 * 1000; /* 100 ms */
-		for (;;) {
-			rc = nanosleep(&req, &rem);
-			if (rc < 0) {
-				if (errno == EINTR) {
-					req = rem;
-					continue;
-				}
-			}
-			break;
-		}
-	}
-
-	fprintf(stderr, "Failed to bind HID device %s: %s\n",
-		hidDeviceString, strerror(errno));
-}
-
 int GetFirmwareProps(const char * deviceFile, std::string &props)
 {
 	HIDDevice rmidevice;
@@ -282,17 +175,10 @@ int main(int argc, char **argv)
 	}
 
 	if (deviceName) {
-		char * rawDevice;
 		rc = UpdateDevice(image, force, performLockdown, deviceName);
-		if (rc)
-			return rc;
 
-		rawDevice = strcasestr(deviceName, "hidraw");
-		if (rawDevice)
-			RebindDriver(rawDevice);
 		return rc;
 	} else {
-		char rawDevice[PATH_MAX];
 		char deviceFile[PATH_MAX];
 		bool found = false;
 
@@ -302,6 +188,7 @@ int main(int argc, char **argv)
 
 		while ((devDirEntry = readdir(devDir)) != NULL) {
 			if (strstr(devDirEntry->d_name, "hidraw")) {
+				char rawDevice[PATH_MAX];
 				strncpy(rawDevice, devDirEntry->d_name, PATH_MAX);
 				snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
 				rc = UpdateDevice(image, force, performLockdown, deviceFile);
@@ -309,7 +196,6 @@ int main(int argc, char **argv)
 					continue;
 				} else {
 					found = true;
-					RebindDriver(rawDevice);
 					break;
 				}
 			}

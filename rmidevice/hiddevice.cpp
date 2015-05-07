@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
@@ -484,4 +485,194 @@ void HIDDevice::PrintReport(const unsigned char *report)
 		}
 	}
 	fprintf(stdout, "\n\n");
+}
+
+bool WriteDeviceNameToFile(const char * file, const char * str)
+{
+	int fd;
+	ssize_t size;
+
+	fd = open(file, O_WRONLY);
+	if (fd < 0)
+		return false;
+
+	for (;;) {
+		size = write(fd, str, 19);
+		if (size < 0) {
+			if (errno == EINTR)
+				continue;
+
+			return false;
+		}
+		break;
+	}
+	close(fd);
+
+	return true;
+}
+
+void HIDDevice::RebindDriver()
+{
+	int bus = m_info.bustype;
+	int vendor = m_info.vendor;
+	int product = m_info.product;
+	std::string hidDeviceName;
+	std::string transportDeviceName;
+	std::string driverPath;
+	std::string bindFile;
+	std::string unbindFile;
+	std::string hidrawFile;
+
+	Close();
+
+	if (!LookupHidDeviceName(bus, vendor, product, hidDeviceName)) {
+		fprintf(stderr, "Failed to find HID device name for the specified device: bus (0x%x) vendor: (0x%x) product: (0x%x)\n",
+			bus, vendor, product);
+		return;
+	}
+
+	if (!FindTransportDriver(bus, hidDeviceName, transportDeviceName, driverPath)) {
+		fprintf(stderr, "Failed to find the transport device / driver for %s\n", hidDeviceName.c_str());
+		return;
+	}
+
+	bindFile = driverPath + "bind";
+	unbindFile = driverPath + "unbind";
+
+	if (!WriteDeviceNameToFile(unbindFile.c_str(), transportDeviceName.c_str())) {
+		fprintf(stderr, "Failed to unbind HID device %s: %s\n",
+			transportDeviceName.c_str(), strerror(errno));
+		return;
+	}
+
+	if (!WriteDeviceNameToFile(bindFile.c_str(), transportDeviceName.c_str())) {
+		fprintf(stderr, "Failed to bind HID device %s: %s\n",
+			transportDeviceName.c_str(), strerror(errno));
+		return;
+	}
+
+	// The hid device id has changed this is now a new hid device so we have to look up the new name
+	if (!LookupHidDeviceName(bus, vendor, product, hidDeviceName)) {
+		fprintf(stderr, "Failed to find HID device name for the specified device: bus (0x%x) vendor: (0x%x) product: (0x%x)\n",
+			bus, vendor, product);
+		return;
+	}
+
+	if (!FindHidRawFile(hidDeviceName, hidrawFile)) {
+		fprintf(stderr, "Failed to find the hidraw device file for %s\n", hidDeviceName.c_str());
+		return;
+	}
+
+	Open(hidrawFile.c_str());
+}
+
+bool HIDDevice::FindTransportDriver(int bus, std::string & hidDeviceName,
+			std::string & transportDeviceName, std::string & driverPath)
+{
+	std::string devicePrefix = "/sys/bus/";
+	std::string devicePath;
+	struct dirent * devicesDirEntry;
+	DIR * devicesDir;
+	struct dirent * devDirEntry;
+	DIR * devDir;
+	bool deviceFound = false;
+	ssize_t sz;
+
+	if (bus == BUS_I2C) {
+		devicePrefix += "i2c/";
+		driverPath = devicePrefix + "drivers/i2c_hid/";
+	} else {
+		devicePrefix += "usb/";
+		driverPath = devicePrefix + "drivers/usbhid/";
+	}
+	devicePath = devicePrefix + "devices/";
+
+	devicesDir = opendir(devicePath.c_str());
+	if (!devicesDir)
+		return false;
+
+	while((devicesDirEntry = readdir(devicesDir)) != NULL) {
+		if (devicesDirEntry->d_type != DT_LNK)
+			continue;
+
+		char buf[PATH_MAX];
+
+		sz = readlinkat(dirfd(devicesDir), devicesDirEntry->d_name, buf, PATH_MAX);
+		if (sz < 0)
+			continue;
+
+		buf[sz] = 0;
+
+		std::string fullLinkPath = devicePath + buf;
+		devDir = opendir(fullLinkPath.c_str());
+		if (!devDir) {
+			fprintf(stdout, "opendir failed\n");
+			continue;
+		}
+
+		while ((devDirEntry = readdir(devDir)) != NULL) {
+			if (!strcmp(devDirEntry->d_name, hidDeviceName.c_str())) {
+				transportDeviceName = devicesDirEntry->d_name;
+				deviceFound = true;
+				break;
+			}
+		}
+		closedir(devDir);
+
+		if (deviceFound)
+			break;
+	}
+	closedir(devicesDir);
+
+	return deviceFound;
+}
+
+bool HIDDevice::LookupHidDeviceName(int bus, int vendorId, int productId, std::string & deviceName)
+{
+	bool ret = false;
+	struct dirent * devDirEntry;
+	DIR * devDir;
+	char devicePrefix[15];
+
+	snprintf(devicePrefix, 15, "%04X:%04X:%04X", bus, vendorId, productId);
+
+	devDir = opendir("/sys/bus/hid/devices");
+	if (!devDir)
+		return false;
+
+	while ((devDirEntry = readdir(devDir)) != NULL) {
+		if (!strncmp(devDirEntry->d_name, devicePrefix, 14)) {
+			deviceName = devDirEntry->d_name;
+			ret = true;
+			break;
+		}
+	}
+	closedir(devDir);
+
+	return ret;
+}
+
+bool HIDDevice::FindHidRawFile(std::string & deviceName, std::string & hidrawFile)
+{
+	bool ret = false;
+	char hidrawDir[PATH_MAX];
+	struct dirent * devDirEntry;
+	DIR * devDir;
+
+	snprintf(hidrawDir, PATH_MAX, "/sys/bus/hid/devices/%s/hidraw", deviceName.c_str());
+
+	devDir = opendir(hidrawDir);
+	if (!devDir)
+		return false;
+
+	while ((devDirEntry = readdir(devDir)) != NULL) {
+		if (!strncmp(devDirEntry->d_name, "hidraw", 6)) {
+			hidrawFile = std::string("/dev/") + devDirEntry->d_name;
+			ret = true;
+			break;
+		}
+	}
+	closedir(devDir);
+
+	return ret;
 }

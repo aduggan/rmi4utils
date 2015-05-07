@@ -19,6 +19,7 @@
 #define _HIDDEVICE_H_
 
 #include <linux/hidraw.h>
+#include <string>
 #include "rmidevice.h"
 
 class HIDDevice : public RMIDevice
@@ -38,6 +39,7 @@ public:
 	virtual int GetAttentionReport(struct timeval * timeout, unsigned int source_mask,
 					unsigned char *buf, unsigned int *len);
 	virtual void Close();
+	virtual void RebindDriver();
 	~HIDDevice() { Close(); }
 
 private:
@@ -68,6 +70,12 @@ private:
 	int GetReport(int *reportId, struct timeval * timeout = NULL);
 	void PrintReport(const unsigned char *report);
 	void ParseReportSizes();
+
+	// static HID utility functions
+	static bool LookupHidDeviceName(int bus, int vendorId, int productId, std::string &deviceName);
+	static bool FindTransportDriver(int bus, std::string & hidDeviceName,
+					std::string & transportDeviceName, std::string & driverPath);
+	static bool FindHidRawFile(std::string & hidDeviceName, std::string & hidrawFile);
  };
 
 #endif /* _HIDDEVICE_H_ */

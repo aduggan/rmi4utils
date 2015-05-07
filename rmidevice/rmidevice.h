@@ -45,6 +45,7 @@ public:
 	{ return -1; /* Unsupported */ }
 	virtual void Close() = 0;
 	virtual void Cancel() { m_bCancel = true; }
+	virtual void RebindDriver() = 0;
 
 	unsigned long GetFirmwareID() { return m_buildID; }
 	int GetFirmwareVersionMajor() { return m_firmwareVersionMajor; }
