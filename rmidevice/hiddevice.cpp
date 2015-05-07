@@ -492,7 +492,8 @@ void HIDDevice::PrintDeviceInfo()
 {
 	fprintf(stdout, "HID device info:\nBus: %s Vendor: 0x%04x Product: 0x%04x\n",
 		m_info.bustype == BUS_I2C ? "I2C" : "USB", m_info.vendor, m_info.product);
-	fprintf(stdout, "Report sizes: input: %ld output: %ld\n", m_inputReportSize, m_outputReportSize);
+	fprintf(stdout, "Report sizes: input: %ld output: %ld\n", (unsigned long)m_inputReportSize,
+		(unsigned long)m_outputReportSize);
 }
 
 bool WriteDeviceNameToFile(const char * file, const char * str)
@@ -539,7 +540,7 @@ void HIDDevice::RebindDriver()
 		return;
 	}
 
-	if (!FindTransportDriver(bus, hidDeviceName, transportDeviceName, driverPath)) {
+	if (!FindTransportDevice(bus, hidDeviceName, transportDeviceName, driverPath)) {
 		fprintf(stderr, "Failed to find the transport device / driver for %s\n", hidDeviceName.c_str());
 		return;
 	}
@@ -559,7 +560,7 @@ void HIDDevice::RebindDriver()
 		return;
 	}
 
-	// The hid device id has changed this is now a new hid device so we have to look up the new name
+	// The hid device id has changed since this is now a new hid device. Now we have to look up the new name.
 	if (!LookupHidDeviceName(bus, vendor, product, hidDeviceName)) {
 		fprintf(stderr, "Failed to find HID device name for the specified device: bus (0x%x) vendor: (0x%x) product: (0x%x)\n",
 			bus, vendor, product);
@@ -574,7 +575,7 @@ void HIDDevice::RebindDriver()
 	Open(hidrawFile.c_str());
 }
 
-bool HIDDevice::FindTransportDriver(int bus, std::string & hidDeviceName,
+bool HIDDevice::FindTransportDevice(int bus, std::string & hidDeviceName,
 			std::string & transportDeviceName, std::string & driverPath)
 {
 	std::string devicePrefix = "/sys/bus/";

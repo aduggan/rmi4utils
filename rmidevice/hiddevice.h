@@ -75,7 +75,7 @@ private:
 
 	// static HID utility functions
 	static bool LookupHidDeviceName(int bus, int vendorId, int productId, std::string &deviceName);
-	static bool FindTransportDriver(int bus, std::string & hidDeviceName,
+	static bool FindTransportDevice(int bus, std::string & hidDeviceName,
 					std::string & transportDeviceName, std::string & driverPath);
 	static bool FindHidRawFile(std::string & hidDeviceName, std::string & hidrawFile);
  };
