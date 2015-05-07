@@ -34,7 +34,7 @@
 
 #include "hiddevice.h"
 
-#define RMI4UPDATE_GETOPTS      "hp:ir:w:foam"
+#define RMI4UPDATE_GETOPTS      "hp:ir:w:foamb"
 
  enum rmihidtool_cmd {
 	RMIHIDTOOL_CMD_INTERACTIVE,
@@ -44,6 +44,7 @@
 	RMIHIDTOOL_CMD_PROPS,
 	RMIHIDTOOL_CMD_ATTN,
 	RMIHIDTOOL_CMD_PRINT_FUNCTIONS,
+	RMIHIDTOOL_CMD_REBIND_DRIVER,
 };
 
 static int report_attn = 0;
@@ -61,6 +62,7 @@ void print_help(const char *prog_name)
 	fprintf(stdout, "\t-o, --props\t\t\t\tPrint device properties\n");
 	fprintf(stdout, "\t-a, --attention\t\t\t\tPrint attention reports until control + c\n");
 	fprintf(stdout, "\t-m, --print-functions\t\t\tPrint RMI4 functions for the device.\n");
+	fprintf(stdout, "\t-b, --rebind-driver\t\t\tRebind the driver to force an update of device properties.\n");
 }
 
 void print_cmd_usage()
@@ -207,6 +209,7 @@ int main(int argc, char ** argv)
 		{"props", 0, NULL, 'o'},
 		{"attention", 0, NULL, 'a'},
 		{"print-functions", 0, NULL, 'm'},
+		{"rebind-driver", 0, NULL, 'b'},
 		{0, 0, 0, 0},
 	};
 	enum rmihidtool_cmd cmd = RMIHIDTOOL_CMD_INTERACTIVE;
@@ -254,6 +257,9 @@ int main(int argc, char ** argv)
 				break;
 			case 'm':
 				cmd = RMIHIDTOOL_CMD_PRINT_FUNCTIONS;
+				break;
+			case 'b':
+				cmd = RMIHIDTOOL_CMD_REBIND_DRIVER;
 				break;
 			default:
 				print_help(argv[0]);
@@ -334,6 +340,9 @@ int main(int argc, char ** argv)
 		case RMIHIDTOOL_CMD_PRINT_FUNCTIONS:
 			device->ScanPDT();
 			device->PrintFunctions();
+			break;
+		case RMIHIDTOOL_CMD_REBIND_DRIVER:
+			device->RebindDriver();
 			break;
 		case RMIHIDTOOL_CMD_INTERACTIVE:
 		default:
