@@ -205,6 +205,7 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 		fprintf(stdout, "Done writing config, time: %lld us.\n", duration_us);
 	}
 	m_device.Reset();
+	m_device.RebindDriver();
 
 	return UPDATE_SUCCESS;
 
@@ -377,7 +378,9 @@ int RMI4Update::EnterFlashProgramming()
 	if (rc < 0)
 		return UPDATE_FAIL_ENABLE_FLASH_PROGRAMMING;
 
-	rc = WaitForIdle(RMI_F34_ENABLE_WAIT_MS);
+	Sleep(RMI_F34_ENABLE_WAIT_MS);
+	m_device.RebindDriver();
+	rc = WaitForIdle(0);
 	if (rc != UPDATE_SUCCESS)
 		return UPDATE_FAIL_NOT_IN_IDLE_STATE;
 
@@ -465,19 +468,21 @@ int RMI4Update::WaitForIdle(int timeout_ms)
 	int rc;
 	struct timeval tv;
 
-	tv.tv_sec = timeout_ms / 1000;
-	tv.tv_usec = (timeout_ms % 1000) * 1000;
+	if (timeout_ms > 0) {
+		tv.tv_sec = timeout_ms / 1000;
+		tv.tv_usec = (timeout_ms % 1000) * 1000;
 
-	rc = m_device.WaitForAttention(&tv, m_f34.GetInterruptMask());
-	if (rc == -ETIMEDOUT)
-		/*
-		 * If for some reason we are not getting attention reports for HID devices
-		 * then we can still continue after the timeout and read F34 status
-		 * but if we have to wait for the timeout to ellapse everytime then this
-		 * will be slow. If this message shows up a lot then something is wrong
-		 * with receiving attention reports and that should be fixed.
-		 */
-		fprintf(stderr, "Timed out waiting for attn report\n");
+		rc = m_device.WaitForAttention(&tv, m_f34.GetInterruptMask());
+		if (rc == -ETIMEDOUT)
+			/*
+			 * If for some reason we are not getting attention reports for HID devices
+			 * then we can still continue after the timeout and read F34 status
+			 * but if we have to wait for the timeout to ellapse everytime then this
+			 * will be slow. If this message shows up a lot then something is wrong
+			 * with receiving attention reports and that should be fixed.
+			 */
+			fprintf(stderr, "Timed out waiting for attn report\n");
+	}
 
 	rc = ReadF34Controls();
 	if (rc != UPDATE_SUCCESS)
