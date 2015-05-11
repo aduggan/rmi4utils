@@ -34,7 +34,7 @@
 #include "f54test.h"
 #include "display.h"
 
-#define F54TEST_GETOPTS	"hd:r:c"
+#define F54TEST_GETOPTS	"hd:r:cn"
 
 static bool stopRequested;
 
@@ -45,9 +45,10 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "\t-d, --device\thidraw device file associated with the device being tested.\n");
 	fprintf(stdout, "\t-r, --report_type\tReport type.\n");
 	fprintf(stdout, "\t-c, --continuous\tContinuous mode.\n");
+	fprintf(stdout, "\t-n, --no_reset\tDo not reset after the report.\n");
 }
 
-int RunF54Test(const char * deviceFile, f54_report_types reportType, bool continuousMode)
+int RunF54Test(const char * deviceFile, f54_report_types reportType, bool continuousMode, bool noReset)
 {
 	int rc;
 	HIDDevice rmidevice;
@@ -81,7 +82,8 @@ int RunF54Test(const char * deviceFile, f54_report_types reportType, bool contin
 	}
 	while (continuousMode && !stopRequested);
 
-	rmidevice.Reset();
+	if (!noReset)
+		rmidevice.Reset();
 
 	rmidevice.Close();
 
@@ -106,12 +108,14 @@ int main(int argc, char **argv)
 		{"device", 1, NULL, 'd'},
 		{"report_type", 1, NULL, 'r'},
 		{"continuous", 0, NULL, 'c'},
+		{"no_reset", 0, NULL, 'n'},
 		{0, 0, 0, 0},
 	};
 	struct dirent * devDirEntry;
 	DIR * devDir;
 	f54_report_types reportType = F54_16BIT_IMAGE;
 	bool continuousMode = false;
+	bool noReset = false;
 
 	while ((opt = getopt_long(argc, argv, F54TEST_GETOPTS, long_options, &index)) != -1) {
 		switch (opt) {
@@ -127,6 +131,9 @@ int main(int argc, char **argv)
 			case 'c':
 				continuousMode = true;
 				break;
+			case 'n':
+				noReset = true;
+				break;
 			default:
 				break;
 
@@ -141,7 +148,7 @@ int main(int argc, char **argv)
 	}
 
 	if (deviceName) {
-		rc = RunF54Test(deviceName, reportType, continuousMode);
+		rc = RunF54Test(deviceName, reportType, continuousMode, noReset);
 		if (rc)
 			return rc;
 
@@ -159,7 +166,7 @@ int main(int argc, char **argv)
 			if (strstr(devDirEntry->d_name, "hidraw")) {
 				strncpy(rawDevice, devDirEntry->d_name, PATH_MAX);
 				snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
-				rc = RunF54Test(deviceFile, reportType, continuousMode);
+				rc = RunF54Test(deviceFile, reportType, continuousMode, noReset);
 				if (rc != 0) {
 					continue;
 				} else {
