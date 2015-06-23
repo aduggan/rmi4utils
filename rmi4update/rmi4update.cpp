@@ -118,15 +118,15 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 	rc = EnterFlashProgramming();
 	if (rc != UPDATE_SUCCESS) {
 		fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-		return rc;
+		goto reset;
 	}
 
 	if (!force && m_firmwareImage.HasIO()) {
 		if (m_firmwareImage.GetFirmwareID() <= m_device.GetFirmwareID()) {
-			m_device.Reset();
 			fprintf(stderr, "Firmware image (%ld) is not newer then the firmware on the device (%ld)\n",
 				m_firmwareImage.GetFirmwareID(), m_device.GetFirmwareID());
-			return UPDATE_FAIL_FIRMWARE_IMAGE_IS_OLDER;
+			rc = UPDATE_FAIL_FIRMWARE_IMAGE_IS_OLDER;
+			goto reset;
 		}
 	}
 
@@ -139,7 +139,7 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 					RMI_F34_WRITE_LOCKDOWN_BLOCK);
 			if (rc != UPDATE_SUCCESS) {
 				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-				return rc;
+				goto reset;
 			}
 			clock_gettime(CLOCK_MONOTONIC, &end);
 			duration_us = diff_time(&start, &end);
@@ -149,7 +149,7 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 		rc = EnterFlashProgramming();
 		if (rc != UPDATE_SUCCESS) {
 			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return rc;
+			goto reset;
 		}
 		
 	}
@@ -157,7 +157,7 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 	rc = WriteBootloaderID();
 	if (rc != UPDATE_SUCCESS) {
 		fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-		return rc;
+		goto reset;
 	}
 
 	fprintf(stdout, "Erasing FW...\n");
@@ -165,13 +165,14 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 	rc = m_device.Write(m_f34StatusAddr, &eraseAll, 1);
 	if (rc < 0) {
 		fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(UPDATE_FAIL_ERASE_ALL));
-		return UPDATE_FAIL_ERASE_ALL;
+		rc = UPDATE_FAIL_ERASE_ALL;
+		goto reset;
 	}
 
 	rc = WaitForIdle(RMI_F34_ERASE_WAIT_MS);
 	if (rc != UPDATE_SUCCESS) {
 		fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-		return rc;
+		goto reset;
 	}
 	clock_gettime(CLOCK_MONOTONIC, &end);
 	duration_us = diff_time(&start, &end);
@@ -184,7 +185,7 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 						RMI_F34_WRITE_FW_BLOCK);
 		if (rc != UPDATE_SUCCESS) {
 			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return rc;
+			goto reset;
 		}
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		duration_us = diff_time(&start, &end);
@@ -198,16 +199,17 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 				RMI_F34_WRITE_CONFIG_BLOCK);
 		if (rc != UPDATE_SUCCESS) {
 			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return rc;
+			goto reset;
 		}
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		duration_us = diff_time(&start, &end);
 		fprintf(stdout, "Done writing config, time: %lld us.\n", duration_us);
 	}
+
+reset:
 	m_device.Reset();
 	m_device.RebindDriver();
-
-	return UPDATE_SUCCESS;
+	return rc;
 
 }
 
