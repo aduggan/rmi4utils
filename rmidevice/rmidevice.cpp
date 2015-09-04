@@ -64,7 +64,7 @@ int RMIDevice::SetRMIPage(unsigned char page)
 
 	m_page = page;
 	rc = Write(RMI_DEVICE_PAGE_SELECT_REGISTER, &page, 1);
-	if (rc < 0) {
+	if (rc < 0 || rc < 1) {
 		m_page = -1;
 		return rc;
 	}
@@ -86,7 +86,7 @@ int RMIDevice::QueryBasicProperties()
 		queryAddr = f01.GetQueryBase();
 
 		rc = Read(queryAddr, basicQuery, RMI_DEVICE_F01_BASIC_QUERY_LEN);
-		if (rc < 0) {
+		if (rc < 0 || rc < RMI_DEVICE_F01_BASIC_QUERY_LEN) {
 			fprintf(stderr, "Failed to read the basic query: %s\n", strerror(errno));
 			return rc;
 		}
@@ -106,7 +106,7 @@ int RMIDevice::QueryBasicProperties()
 
 		queryAddr += 11;
 		rc = Read(queryAddr, m_productID, RMI_PRODUCT_ID_LENGTH);
-		if (rc < 0) {
+		if (rc < 0 || rc < RMI_PRODUCT_ID_LENGTH) {
 			fprintf(stderr, "Failed to read the product id: %s\n", strerror(errno));
 			return rc;
 		}
@@ -120,7 +120,7 @@ int RMIDevice::QueryBasicProperties()
 
 		if (m_hasSensorID) {
 			rc = Read(queryAddr++, &m_sensorID, 1);
-			if (rc < 0) {
+			if (rc < 0 || rc < 1) {
 				fprintf(stderr, "Failed to read sensor id: %s\n", strerror(errno));
 				return rc;
 			}
@@ -131,7 +131,7 @@ int RMIDevice::QueryBasicProperties()
 
 		if (m_hasQuery42) {
 			rc = Read(queryAddr++, infoBuf, 1);
-			if (rc < 0) {
+			if (rc < 0 || rc < 1) {
 				fprintf(stderr, "Failed to read query 42: %s\n", strerror(errno));
 				return rc;
 			}
@@ -142,7 +142,7 @@ int RMIDevice::QueryBasicProperties()
 
 		if (m_hasDS4Queries) {
 			rc = Read(queryAddr++, &m_ds4QueryLength, 1);
-			if (rc < 0) {
+			if (rc < 0 || rc < 1) {
 				fprintf(stderr, "Failed to read DS4 query length: %s\n", strerror(errno));
 				return rc;
 			}
@@ -151,7 +151,7 @@ int RMIDevice::QueryBasicProperties()
 		for (int i = 1; i <= m_ds4QueryLength; ++i) {
 			unsigned char val;
 			rc = Read(queryAddr++, &val, 1);
-			if (rc < 0) {
+			if (rc < 0 || rc < 1) {
 				fprintf(stderr, "Failed to read F01 Query43.%02d: %s\n", i, strerror(errno));
 				continue;
 			}
@@ -170,7 +170,7 @@ int RMIDevice::QueryBasicProperties()
 
 		if (m_hasPackageIDQuery) {
 			rc = Read(prodInfoAddr++, infoBuf, PACKAGE_ID_BYTES);
-			if (rc > 0) {
+			if (rc >= PACKAGE_ID_BYTES) {
 				unsigned short *val = (unsigned short *)infoBuf;
 				m_packageID = *val;
 				val = (unsigned short *)(infoBuf + 2);
@@ -180,7 +180,7 @@ int RMIDevice::QueryBasicProperties()
 
 		if (m_hasBuildIDQuery) {
 			rc = Read(prodInfoAddr, infoBuf, BUILD_ID_BYTES);
-			if (rc > 0) {
+			if (rc >= BUILD_ID_BYTES) {
 				unsigned short *val = (unsigned short *)infoBuf;
 				m_buildID = *val;
 				m_buildID += infoBuf[2] * 65536;
@@ -220,7 +220,7 @@ int RMIDevice::Reset()
 
 	fprintf(stdout, "Resetting...\n");
 	rc = Write(f01.GetCommandBase(), &deviceReset, 1);
-	if (rc < 0)
+	if (rc < 0 || rc < 1)
 		return rc;
 
 	rc = Sleep(RMI_F01_DEFAULT_RESET_DELAY_MS);
@@ -280,7 +280,7 @@ int RMIDevice::ScanPDT(int endFunc, int endPage)
 
 		for (addr = pdt_start; addr >= pdt_end; addr -= RMI_DEVICE_PDT_ENTRY_SIZE) {
 			rc = Read(addr, entry, RMI_DEVICE_PDT_ENTRY_SIZE);
-			if (rc < 0) {
+			if (rc < 0 || rc < RMI_DEVICE_PDT_ENTRY_SIZE) {
 				fprintf(stderr, "Failed to read PDT entry at address (0x%04x)\n", addr);
 				return rc;
 			}
@@ -314,7 +314,7 @@ bool RMIDevice::InBootloader()
 		unsigned char status;
 
 		rc = Read(f01.GetDataBase(), &status, 1);
-		if (rc < 0)
+		if (rc < 0 || rc < 1)
 			return true;
 
 		return !!(status & 0x40);
