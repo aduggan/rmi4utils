@@ -79,7 +79,7 @@ void print_cmd_usage()
 	fprintf(stdout, "q: quit\n");
 }
 
-int find_token(char * input, char * result, char ** endpp)
+int find_token(char * input, char * result, size_t result_len, char ** endpp)
 {
 	int i = 0;
 	char * start = input;
@@ -100,6 +100,8 @@ int find_token(char * input, char * result, char ** endpp)
 		return 0;
 
 	*endpp = end;
+	if (static_cast<ssize_t>(result_len) < end - start + 1)
+		return 0;
 	strncpy(result, start, end - start);
 	result[end - start] = '\0';
 
@@ -123,7 +125,7 @@ void interactive(RMIDevice * device, unsigned char *report)
 
 			if (input[0] == 's') {
 				start = input + 2;
-				find_token(start, token, &end);
+				find_token(start, token, sizeof(token), &end);
 				int mode = strtol(token, NULL, 0);
 				if (mode >= 0 && mode <= 2) {
 					if (device->SetMode(mode)) {
@@ -135,10 +137,10 @@ void interactive(RMIDevice * device, unsigned char *report)
 				}
 			} else if (input[0] == 'r') {
 				start = input + 2;
-				find_token(start, token, &end);
+				find_token(start, token, sizeof(token), &end);
 				start = end + 1;
 				unsigned int addr = strtol(token, NULL, 0);
-				find_token(start, token, &end);
+				find_token(start, token, sizeof(token), &end);
 				start = end + 1;
 				unsigned int len = strtol(token, NULL, 0);
 				fprintf(stdout, "Address = 0x%02x Length = %d\n", addr, len);
@@ -151,13 +153,13 @@ void interactive(RMIDevice * device, unsigned char *report)
 			} else if (input[0] == 'w') {
 				int index = 0;
 				start = input + 2;
-				find_token(start, token, &end);
+				find_token(start, token, sizeof(token), &end);
 				start = end + 1;
 				unsigned int addr = strtol(token, NULL, 0);
 				unsigned int len = 0;
 
 				memset(report, 0, 256);
-				while (find_token(start, token, &end)) {
+				while (find_token(start, token, sizeof(token), &end)) {
 					start = end;
 					report[index++] = strtol(token, NULL, 0);
 					++len;
@@ -315,7 +317,7 @@ int main(int argc, char ** argv)
 			i = 0;
 			start = data;
 			memset(report, 0, sizeof(report));
-			while (find_token(start, token, &end)) {
+			while (find_token(start, token, sizeof(token), &end)) {
 				start = end;
 				report[i++] = (unsigned char)strtol(token, NULL, 0);
 				++len;
