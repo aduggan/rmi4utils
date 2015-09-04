@@ -442,6 +442,7 @@ int HIDDevice::GetReport(int *reportId, struct timeval * timeout)
 				if (offset == m_inputReportSize)
 					break;
 			}
+			count = offset;
 		}
 		break;
 	}
@@ -452,12 +453,12 @@ int HIDDevice::GetReport(int *reportId, struct timeval * timeout)
 	if (m_inputReport[HID_RMI4_REPORT_ID] == RMI_ATTN_REPORT_ID) {
 		if (static_cast<ssize_t>(m_inputReportSize) < count)
 			return -1;
-		memcpy(m_attnData, m_inputReport, count /*offset?*/);
+		memcpy(m_attnData, m_inputReport, count);
 	} else if (m_inputReport[HID_RMI4_REPORT_ID] == RMI_READ_DATA_REPORT_ID) {
 		if (static_cast<ssize_t>(m_inputReportSize) < count)
 			return -1;
-		memcpy(m_readData, m_inputReport, count /*offset?*/);
-		m_dataBytesRead = count /*offset?*/;
+		memcpy(m_readData, m_inputReport, count);
+		m_dataBytesRead = count;
 	}
 	return 1;
 }
