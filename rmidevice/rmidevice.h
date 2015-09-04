@@ -32,6 +32,7 @@ class RMIDevice
 public:
 	RMIDevice() : m_functionList(), m_sensorID(0), m_bCancel(false), m_bytesPerReadRequest(0), m_page(-1)
 	{}
+	virtual ~RMIDevice() {}
 	virtual int Open(const char * filename) = 0;
 	virtual int Read(unsigned short addr, unsigned char *data,
 				unsigned short len) = 0;
