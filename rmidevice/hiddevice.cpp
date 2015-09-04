@@ -280,6 +280,9 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 					     HID_RMI4_READ_INPUT_DATA))
 					return -1;
 				bytesInDataReport = m_readData[HID_RMI4_READ_INPUT_COUNT];
+				if (bytesInDataReport >
+				    m_inputReportSize - HID_RMI4_READ_INPUT_DATA)
+					return -1;
 				memcpy(buf + bytesReadPerRequest, &m_readData[HID_RMI4_READ_INPUT_DATA],
 					bytesInDataReport);
 				bytesReadPerRequest += bytesInDataReport;
