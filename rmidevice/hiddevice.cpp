@@ -184,11 +184,15 @@ void HIDDevice::ParseReportSizes()
 
 			if (isReport) {
 				if (m_rptDesc.value[i] == 0x75) {
+					if (i + 1 >= m_rptDesc.size)
+						return;
 					reportSize = m_rptDesc.value[++i];
 					continue;
 				}
 
 				if (m_rptDesc.value[i] == 0x95) {
+					if (i + 1 >= m_rptDesc.size)
+						return;
 					reportCount = m_rptDesc.value[++i];
 					continue;
 				}
@@ -205,6 +209,8 @@ void HIDDevice::ParseReportSizes()
 			}
 		}
 
+		if (i + 2 >= m_rptDesc.size)
+			return;
 		if (m_rptDesc.value[i] == 0x06 && m_rptDesc.value[i + 1] == 0x00
 						&& m_rptDesc.value[i + 2] == 0xFF) {
 			isVendorSpecific = true;
