@@ -537,7 +537,7 @@ bool WriteDeviceNameToFile(const char * file, const char * str)
 		return false;
 
 	for (;;) {
-		size = write(fd, str, 19);
+		size = write(fd, str, strlen(str));
 		if (size < 0) {
 			if (errno == EINTR)
 				continue;
@@ -546,9 +546,8 @@ bool WriteDeviceNameToFile(const char * file, const char * str)
 		}
 		break;
 	}
-	close(fd);
 
-	return true;
+	return close(fd) == 0 && size == static_cast<ssize_t>(strlen(str));
 }
 
 void HIDDevice::RebindDriver()
