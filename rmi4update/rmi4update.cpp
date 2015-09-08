@@ -100,6 +100,15 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 	if (rc < 0)
 		return UPDATE_FAIL_QUERY_BASIC_PROPERTIES;
 
+	if (!force && m_firmwareImage.HasIO()) {
+		if (m_firmwareImage.GetFirmwareID() <= m_device.GetFirmwareID()) {
+			fprintf(stderr, "Firmware image (%ld) is not newer then the firmware on the device (%ld)\n",
+				m_firmwareImage.GetFirmwareID(), m_device.GetFirmwareID());
+			rc = UPDATE_FAIL_FIRMWARE_IMAGE_IS_OLDER;
+			return rc;
+		}
+	}
+
 	fprintf(stdout, "Device Properties:\n");
 	m_device.PrintProperties();
 
@@ -119,15 +128,6 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 	if (rc != UPDATE_SUCCESS) {
 		fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
 		goto reset;
-	}
-
-	if (!force && m_firmwareImage.HasIO()) {
-		if (m_firmwareImage.GetFirmwareID() <= m_device.GetFirmwareID()) {
-			fprintf(stderr, "Firmware image (%ld) is not newer then the firmware on the device (%ld)\n",
-				m_firmwareImage.GetFirmwareID(), m_device.GetFirmwareID());
-			rc = UPDATE_FAIL_FIRMWARE_IMAGE_IS_OLDER;
-			goto reset;
-		}
 	}
 
 	if (performLockdown && m_unlocked) {
