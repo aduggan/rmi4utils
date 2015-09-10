@@ -320,7 +320,7 @@ int HIDDevice::Write(unsigned short addr, const unsigned char *buf, unsigned sho
 			else
 				return count;
 		}
-		return count;
+		return len;
 	}
 }
 
