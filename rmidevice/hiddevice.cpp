@@ -372,13 +372,7 @@ int HIDDevice::GetAttentionReport(struct timeval * timeout, unsigned int source_
 					unsigned char *buf, unsigned int *len)
 {
 	int rc = 0;
-	unsigned int bytes = m_inputReportSize;
 	int reportId;
-
-	if (len && m_inputReportSize < *len) {
-		bytes = *len;
-		*len = m_inputReportSize;
-	}
 
 	// Assume the Linux implementation of select with timeout set to the
 	// time remaining.
@@ -386,12 +380,24 @@ int HIDDevice::GetAttentionReport(struct timeval * timeout, unsigned int source_
 		rc = GetReport(&reportId, timeout);
 		if (rc > 0) {
 			if (reportId == RMI_ATTN_REPORT_ID) {
-				if (buf) {
-					if (bytes > m_inputReportSize ||
-					    m_inputReportSize < HID_RMI4_ATTN_INTERUPT_SOURCES + 1)
-						return -1;
-					memcpy(buf, m_attnData, bytes);
+				// If a valid buffer is passed in then copy the data from
+				// the attention report into it. If the buffer is
+				// too small simply set *len to 0 to indicate nothing
+				// was copied. Some callers won't care about the contents
+				// of the report so failing to copy the data should not return
+				// an error.
+				if (buf && len) {
+					if (*len >= m_inputReportSize) {
+						*len = m_inputReportSize;
+						memcpy(buf, m_attnData, *len);
+					} else {
+						*len = 0;
+					}
 				}
+
+				if (m_inputReportSize < HID_RMI4_ATTN_INTERUPT_SOURCES + 1)
+					return -1;
+
 				if (source_mask & m_attnData[HID_RMI4_ATTN_INTERUPT_SOURCES])
 					return rc;
 			}
