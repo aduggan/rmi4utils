@@ -163,7 +163,7 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 	fprintf(stdout, "Erasing FW...\n");
 	clock_gettime(CLOCK_MONOTONIC, &start);
 	rc = m_device.Write(m_f34StatusAddr, &eraseAll, 1);
-	if (rc < 0 || rc < 1) {
+	if (rc != 1) {
 		fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(UPDATE_FAIL_ERASE_ALL));
 		rc = UPDATE_FAIL_ERASE_ALL;
 		goto reset;
@@ -219,7 +219,7 @@ int RMI4Update::DisableNonessentialInterupts()
 	unsigned char interruptEnabeMask = m_f34.GetInterruptMask() | m_f01.GetInterruptMask();
 
 	rc = m_device.Write(m_f01.GetControlBase() + 1, &interruptEnabeMask, 1);
-	if (rc < 0 || rc < 1)
+	if (rc != 1)
 		return rc;
 
 	return UPDATE_SUCCESS;
@@ -254,7 +254,7 @@ int RMI4Update::ReadF34Queries()
 		querySize = 2;
 
 	rc = m_device.Read(queryAddr, m_bootloaderID, RMI_BOOTLOADER_ID_SIZE);
-	if (rc < 0 || rc < RMI_BOOTLOADER_ID_SIZE)
+	if (rc != RMI_BOOTLOADER_ID_SIZE)
 		return UPDATE_FAIL_READ_BOOTLOADER_ID;
 
 	if (f34Version == 0x1)
@@ -264,7 +264,7 @@ int RMI4Update::ReadF34Queries()
 
 	if (f34Version == 0x1) {
 		rc = m_device.Read(queryAddr, buf, 1);
-		if (rc < 0 || rc < 1)
+		if (rc != 1)
 			return UPDATE_FAIL_READ_F34_QUERIES;
 
 		m_hasNewRegmap = buf[0] & RMI_F34_HAS_NEW_REG_MAP;
@@ -274,7 +274,7 @@ int RMI4Update::ReadF34Queries()
 		++queryAddr;
 
 		rc = m_device.Read(queryAddr, buf, 2);
-		if (rc < 0 || rc < 2)
+		if (rc != 2)
 			return UPDATE_FAIL_READ_F34_QUERIES;
 
 		m_blockSize = extract_short(buf + RMI_F34_BLOCK_SIZE_V1_OFFSET);
@@ -282,14 +282,14 @@ int RMI4Update::ReadF34Queries()
 		++queryAddr;
 
 		rc = m_device.Read(queryAddr, buf, 8);
-		if (rc < 0 || rc < 8)
+		if (rc != 8)
 			return UPDATE_FAIL_READ_F34_QUERIES;
 
 		m_fwBlockCount = extract_short(buf + RMI_F34_FW_BLOCKS_V1_OFFSET);
 		m_configBlockCount = extract_short(buf + RMI_F34_CONFIG_BLOCKS_V1_OFFSET);
 	} else {
 		rc = m_device.Read(queryAddr, buf, RMI_F34_QUERY_SIZE);
-		if (rc < 0 || rc < RMI_F34_QUERY_SIZE)
+		if (rc != RMI_F34_QUERY_SIZE)
 			return UPDATE_FAIL_READ_F34_QUERIES;
 
 		m_hasNewRegmap = buf[0] & RMI_F34_HAS_NEW_REG_MAP;
@@ -329,7 +329,7 @@ int RMI4Update::ReadF34Controls()
 
 	if (m_f34.GetFunctionVersion() == 0x1) {
 		rc = m_device.Read(m_f34StatusAddr, buf, 2);
-		if (rc < 0 || rc < 2)
+		if (rc != 2)
 			return UPDATE_FAIL_READ_F34_CONTROLS;
 
 		m_f34Command = buf[0] & RMI_F34_COMMAND_V1_MASK;
@@ -338,7 +338,7 @@ int RMI4Update::ReadF34Controls()
 
 	} else {
 		rc = m_device.Read(m_f34StatusAddr, buf, 1);
-		if (rc < 0 || rc < 1)
+		if (rc != 1)
 			return UPDATE_FAIL_READ_F34_CONTROLS;
 
 		m_f34Command = buf[0] & RMI_F34_COMMAND_MASK;
@@ -359,7 +359,7 @@ int RMI4Update::WriteBootloaderID()
 
 	rc = m_device.Write(m_f34.GetDataBase() + blockDataOffset,
 				m_bootloaderID, RMI_BOOTLOADER_ID_SIZE);
-	if (rc < 0 || rc < RMI_BOOTLOADER_ID_SIZE)
+	if (rc != RMI_BOOTLOADER_ID_SIZE)
 		return UPDATE_FAIL_WRITE_BOOTLOADER_ID;
 
 	return UPDATE_SUCCESS;
@@ -377,7 +377,7 @@ int RMI4Update::EnterFlashProgramming()
 
 	fprintf(stdout, "Enabling flash programming.\n");
 	rc = m_device.Write(m_f34StatusAddr, &enableProg, 1);
-	if (rc < 0 || rc < 1)
+	if (rc != 1)
 		return UPDATE_FAIL_ENABLE_FLASH_PROGRAMMING;
 
 	Sleep(RMI_F34_ENABLE_WAIT_MS);
@@ -395,7 +395,7 @@ int RMI4Update::EnterFlashProgramming()
 		return rc;
 
 	rc = m_device.Read(m_f01.GetDataBase(), &m_deviceStatus, 1);
-	if (rc < 0 || rc < 1)
+	if (rc != 1)
 		return UPDATE_FAIL_READ_DEVICE_STATUS;
 
 	if (!RMI_F01_STATUS_BOOTLOADER(m_deviceStatus))
@@ -406,14 +406,14 @@ int RMI4Update::EnterFlashProgramming()
 		return rc;
 
 	rc = m_device.Read(m_f01.GetControlBase(), &f01Control_0, 1);
-	if (rc < 0 || rc < 1)
+	if (rc != 1)
 		return UPDATE_FAIL_READ_F01_CONTROL_0;
 
 	f01Control_0 |= RMI_F01_CRTL0_NOSLEEP_BIT;
 	f01Control_0 = (f01Control_0 & ~RMI_F01_CTRL0_SLEEP_MODE_MASK) | RMI_SLEEP_MODE_NORMAL;
 
 	rc = m_device.Write(m_f01.GetControlBase(), &f01Control_0, 1);
-	if (rc < 0 || rc < 1)
+	if (rc != 1)
 		return UPDATE_FAIL_WRITE_F01_CONTROL_0;
 
 	return UPDATE_SUCCESS;
@@ -432,18 +432,18 @@ int RMI4Update::WriteBlocks(unsigned char *block, unsigned short count, unsigned
 		addr = m_f34.GetDataBase() + RMI_F34_BLOCK_DATA_OFFSET;
 
 	rc = m_device.Write(m_f34.GetDataBase(), zeros, 2);
-	if (rc < 0 || rc < 2)
+	if (rc != 2)
 		return UPDATE_FAIL_WRITE_INITIAL_ZEROS;
 
 	for (blockNum = 0; blockNum < count; ++blockNum) {
 		rc = m_device.Write(addr, block, m_blockSize);
-		if (rc < 0 || rc < m_blockSize) {
+		if (rc != m_blockSize) {
 			fprintf(stderr, "failed to write block %d\n", blockNum);
 			return UPDATE_FAIL_WRITE_BLOCK;
 		}
 
 		rc = m_device.Write(m_f34StatusAddr, &cmd, 1);
-		if (rc < 0 || rc < 1) {
+		if (rc != 1) {
 			fprintf(stderr, "failed to write command for block %d\n", blockNum);
 			return UPDATE_FAIL_WRITE_FLASH_COMMAND;
 		}
