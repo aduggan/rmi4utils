@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <alloca.h>
 
 #include "rmi4update.h"
 
@@ -425,6 +426,7 @@ int RMI4Update::WriteBlocks(unsigned char *block, unsigned short count, unsigned
 	unsigned char zeros[] = { 0, 0 };
 	int rc;
 	unsigned short addr;
+	unsigned char *blockWithCmd = (unsigned char *)alloca(m_blockSize + 1);
 
 	if (m_f34.GetFunctionVersion() == 0x1)
 		addr = m_f34.GetDataBase() + RMI_F34_BLOCK_DATA_V1_OFFSET;
@@ -436,19 +438,30 @@ int RMI4Update::WriteBlocks(unsigned char *block, unsigned short count, unsigned
 		return UPDATE_FAIL_WRITE_INITIAL_ZEROS;
 
 	for (blockNum = 0; blockNum < count; ++blockNum) {
-		rc = m_device.Write(addr, block, m_blockSize);
-		if (rc != m_blockSize) {
-			fprintf(stderr, "failed to write block %d\n", blockNum);
-			return UPDATE_FAIL_WRITE_BLOCK;
+		if (m_writeBlockWithCmd) {
+			memcpy(blockWithCmd, block, m_blockSize);
+			blockWithCmd[m_blockSize] = cmd;
+
+			rc = m_device.Write(addr, blockWithCmd, m_blockSize + 1);
+			if (rc != m_blockSize + 1) {
+				fprintf(stderr, "failed to write block %d\n", blockNum);
+				return UPDATE_FAIL_WRITE_BLOCK;
+			}
+		} else {
+			rc = m_device.Write(addr, block, m_blockSize);
+			if (rc != m_blockSize) {
+				fprintf(stderr, "failed to write block %d\n", blockNum);
+				return UPDATE_FAIL_WRITE_BLOCK;
+			}
+
+			rc = m_device.Write(m_f34StatusAddr, &cmd, 1);
+			if (rc != 1) {
+				fprintf(stderr, "failed to write command for block %d\n", blockNum);
+				return UPDATE_FAIL_WRITE_FLASH_COMMAND;
+			}
 		}
 
-		rc = m_device.Write(m_f34StatusAddr, &cmd, 1);
-		if (rc != 1) {
-			fprintf(stderr, "failed to write command for block %d\n", blockNum);
-			return UPDATE_FAIL_WRITE_FLASH_COMMAND;
-		}
-
-		rc = WaitForIdle(RMI_F34_IDLE_WAIT_MS);
+		rc = WaitForIdle(RMI_F34_IDLE_WAIT_MS, !m_writeBlockWithCmd);
 		if (rc != UPDATE_SUCCESS) {
 			fprintf(stderr, "failed to go into idle after writing block %d\n", blockNum);
 			return UPDATE_FAIL_NOT_IN_IDLE_STATE;
@@ -465,7 +478,7 @@ int RMI4Update::WriteBlocks(unsigned char *block, unsigned short count, unsigned
  * this will be true for HID, but other protocols will need to revert polling. Polling
  * is not implemented yet.
  */
-int RMI4Update::WaitForIdle(int timeout_ms)
+int RMI4Update::WaitForIdle(int timeout_ms, bool readF34OnSucess)
 {
 	int rc;
 	struct timeval tv;
@@ -486,24 +499,28 @@ int RMI4Update::WaitForIdle(int timeout_ms)
 			fprintf(stderr, "Timed out waiting for attn report\n");
 	}
 
-	rc = ReadF34Controls();
-	if (rc != UPDATE_SUCCESS)
-		return rc;
+	if (rc <= 0 || readF34OnSucess) {
+		rc = ReadF34Controls();
+		if (rc != UPDATE_SUCCESS)
+			return rc;
 
-	if (!m_f34Status && !m_f34Command) {
-		if (!m_programEnabled) {
-			fprintf(stderr, "Bootloader is idle but program_enabled bit isn't set.\n");
-			return UPDATE_FAIL_PROGRAMMING_NOT_ENABLED;
-		} else {
-			return UPDATE_SUCCESS;
+		if (!m_f34Status && !m_f34Command) {
+			if (!m_programEnabled) {
+				fprintf(stderr, "Bootloader is idle but program_enabled bit isn't set.\n");
+				return UPDATE_FAIL_PROGRAMMING_NOT_ENABLED;
+			} else {
+				return UPDATE_SUCCESS;
+			}
 		}
+
+		fprintf(stderr, "ERROR: Waiting for idle status.\n");
+		fprintf(stderr, "Command: %#04x\n", m_f34Command);
+		fprintf(stderr, "Status:  %#04x\n", m_f34Status);
+		fprintf(stderr, "Enabled: %d\n", m_programEnabled);
+		fprintf(stderr, "Idle:    %d\n", !m_f34Command && !m_f34Status);
+
+		return UPDATE_FAIL_NOT_IN_IDLE_STATE;
 	}
 
-	fprintf(stderr, "ERROR: Waiting for idle status.\n");
-	fprintf(stderr, "Command: %#04x\n", m_f34Command);
-	fprintf(stderr, "Status:  %#04x\n", m_f34Status);
-	fprintf(stderr, "Enabled: %d\n", m_programEnabled);
-	fprintf(stderr, "Idle:    %d\n", !m_f34Command && !m_f34Status);
-
-	return UPDATE_FAIL_NOT_IN_IDLE_STATE;
+	return UPDATE_SUCCESS;
 }

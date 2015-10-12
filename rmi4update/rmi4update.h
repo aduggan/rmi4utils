@@ -27,7 +27,7 @@ class RMI4Update
 {
 public:
 	RMI4Update(RMIDevice & device, FirmwareImage & firmwareImage) : m_device(device), 
-			m_firmwareImage(firmwareImage)
+			m_firmwareImage(firmwareImage), m_writeBlockWithCmd(true)
 	{}
 	int UpdateFirmware(bool force = false, bool performLockdown = false);
 
@@ -39,7 +39,7 @@ private:
 	int WriteBootloaderID();
 	int EnterFlashProgramming();
 	int WriteBlocks(unsigned char *block, unsigned short count, unsigned char cmd);
-	int WaitForIdle(int timeout_ms);
+	int WaitForIdle(int timeout_ms, bool readF34OnSucess = true);
 	int GetFirmwareSize() { return m_blockSize * m_fwBlockCount; }
 	int GetConfigSize() { return m_blockSize * m_configBlockCount; }
 
@@ -52,6 +52,7 @@ private:
 
 	unsigned char m_deviceStatus;
 	unsigned char m_bootloaderID[RMI_BOOTLOADER_ID_SIZE];
+	bool m_writeBlockWithCmd;
 
 	/* F34 Controls */
 	unsigned char m_f34Command;
