@@ -480,7 +480,7 @@ int RMI4Update::WriteBlocks(unsigned char *block, unsigned short count, unsigned
  */
 int RMI4Update::WaitForIdle(int timeout_ms, bool readF34OnSucess)
 {
-	int rc;
+	int rc = 0;
 	struct timeval tv;
 
 	if (timeout_ms > 0) {
