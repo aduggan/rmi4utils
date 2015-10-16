@@ -567,6 +567,9 @@ void HIDDevice::RebindDriver()
 	std::string bindFile;
 	std::string unbindFile;
 	std::string hidrawFile;
+	struct stat stat_buf;
+	int rc;
+	int i;
 
 	Close();
 
@@ -608,7 +611,17 @@ void HIDDevice::RebindDriver()
 		return;
 	}
 
-	Open(hidrawFile.c_str());
+	for (i = 0; i < 200; i++) {
+		rc = stat(hidrawFile.c_str(), &stat_buf);
+		if (!rc)
+			break;
+		Sleep(5);
+	}
+
+	rc = Open(hidrawFile.c_str());
+	if (rc)
+		fprintf(stderr, "Failed to open device (%s) during rebind: %d: errno: %s (%d)\n",
+				hidrawFile.c_str(), rc, strerror(errno), errno);
 }
 
 bool HIDDevice::FindTransportDevice(int bus, std::string & hidDeviceName,
