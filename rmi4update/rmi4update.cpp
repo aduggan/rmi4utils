@@ -23,7 +23,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <alloca.h>
 
 #include "rmi4update.h"
 
