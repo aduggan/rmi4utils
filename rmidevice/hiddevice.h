@@ -81,7 +81,7 @@ private:
 	static bool LookupHidDeviceName(int bus, int vendorId, int productId, std::string &deviceName);
 	static bool FindTransportDevice(int bus, std::string & hidDeviceName,
 					std::string & transportDeviceName, std::string & driverPath);
-	static bool FindHidRawFile(std::string & hidDeviceName, std::string & hidrawFile);
+	static bool WaitForHidRawDevice(int notifyFd, std::string & deviceName, std::string & hidraw);
  };
 
 #endif /* _HIDDEVICE_H_ */
