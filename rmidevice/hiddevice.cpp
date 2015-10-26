@@ -31,6 +31,7 @@
 #include <linux/hidraw.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <sys/inotify.h>
 
 #include "hiddevice.h"
 
@@ -567,11 +568,23 @@ void HIDDevice::RebindDriver()
 	std::string bindFile;
 	std::string unbindFile;
 	std::string hidrawFile;
-	struct stat stat_buf;
+	int notifyFd;
+	int wd;
 	int rc;
-	int i;
 
 	Close();
+
+	notifyFd = inotify_init();
+	if (notifyFd < 0) {
+		fprintf(stderr, "Failed to initialize inotify\n");
+		return;
+	}
+
+	wd = inotify_add_watch(notifyFd, "/dev", IN_CREATE);
+	if (wd < 0) {
+		fprintf(stderr, "Failed to add watcher for /dev\n");
+		return;
+	}
 
 	if (!LookupHidDeviceName(bus, vendor, product, hidDeviceName)) {
 		fprintf(stderr, "Failed to find HID device name for the specified device: bus (0x%x) vendor: (0x%x) product: (0x%x)\n",
@@ -599,29 +612,12 @@ void HIDDevice::RebindDriver()
 		return;
 	}
 
-	// The hid device id has changed since this is now a new hid device. Now we have to look up the new name.
-	if (!LookupHidDeviceName(bus, vendor, product, hidDeviceName)) {
-		fprintf(stderr, "Failed to find HID device name for the specified device: bus (0x%x) vendor: (0x%x) product: (0x%x)\n",
-			bus, vendor, product);
-		return;
+	if (WaitForHidRawDevice(notifyFd, hidDeviceName, hidrawFile)) {
+		rc = Open(hidrawFile.c_str());
+		if (rc)
+			fprintf(stderr, "Failed to open device (%s) during rebind: %d: errno: %s (%d)\n",
+					hidrawFile.c_str(), rc, strerror(errno), errno);
 	}
-
-	if (!FindHidRawFile(hidDeviceName, hidrawFile)) {
-		fprintf(stderr, "Failed to find the hidraw device file for %s\n", hidDeviceName.c_str());
-		return;
-	}
-
-	for (i = 0; i < 200; i++) {
-		rc = stat(hidrawFile.c_str(), &stat_buf);
-		if (!rc)
-			break;
-		Sleep(5);
-	}
-
-	rc = Open(hidrawFile.c_str());
-	if (rc)
-		fprintf(stderr, "Failed to open device (%s) during rebind: %d: errno: %s (%d)\n",
-				hidrawFile.c_str(), rc, strerror(errno), errno);
 }
 
 bool HIDDevice::FindTransportDevice(int bus, std::string & hidDeviceName,
@@ -710,27 +706,60 @@ bool HIDDevice::LookupHidDeviceName(int bus, int vendorId, int productId, std::s
 	return ret;
 }
 
-bool HIDDevice::FindHidRawFile(std::string & deviceName, std::string & hidrawFile)
+bool HIDDevice::WaitForHidRawDevice(int notifyFd, std::string & deviceName,
+									std::string & hidrawFile)
 {
-	bool ret = false;
-	char hidrawDir[PATH_MAX];
-	struct dirent * devDirEntry;
-	DIR * devDir;
+	struct timeval timeout;
+	fd_set fds;
+	int rc;
+	size_t sz;
+	char link[PATH_MAX];
 
-	snprintf(hidrawDir, PATH_MAX, "/sys/bus/hid/devices/%s/hidraw", deviceName.c_str());
+	for (;;) {
+		FD_ZERO(&fds);
+		FD_SET(notifyFd, &fds);
 
-	devDir = opendir(hidrawDir);
-	if (!devDir)
-		return false;
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;
 
-	while ((devDirEntry = readdir(devDir)) != NULL) {
-		if (!strncmp(devDirEntry->d_name, "hidraw", 6)) {
-			hidrawFile = std::string("/dev/") + devDirEntry->d_name;
-			ret = true;
-			break;
+		rc = select(notifyFd + 1, &fds, NULL, NULL, &timeout);
+		if (rc < 0) {
+			if (errno == -EINTR)
+				continue;
+
+			return false;
+		}
+
+		if (rc == 0) {
+			return false;
+		}
+
+		if (FD_ISSET(notifyFd, &fds)) {
+			struct inotify_event * event;
+			const int buf_len = sizeof(struct inotify_event) + NAME_MAX + 1;
+			char buf[buf_len];
+
+			rc = read(notifyFd, buf, buf_len);
+			if (rc < 0) {
+				continue;
+			}
+
+			event = (struct inotify_event *)buf;
+
+			if (!strncmp(event->name, "hidraw", 6)) {
+				std::string classPath = std::string("/sys/class/hidraw/")
+											+ event->name + "/device";
+				sz = readlink(classPath.c_str(), link, PATH_MAX);
+				link[sz] = 0;
+
+				// The buffer looks something like ../../../0018:06CB:76AD.0014
+				// Add 9 to strip off ../../../ and ignore the id on the end which
+				// changes per instance.
+				if (!strncmp(deviceName.c_str(), link + 9, 14)) {
+					hidrawFile = std::string("/dev/") + event->name;
+					return true;
+				}
+			}
 		}
 	}
-	closedir(devDir);
-
-	return ret;
 }
