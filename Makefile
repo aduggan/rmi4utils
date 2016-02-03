@@ -4,13 +4,13 @@ export NDK_PROJECT_PATH
 all:
 	$(MAKE) -C rmidevice all
 	$(MAKE) -C rmi4update all
-	$(MAKE) -C rmihidtool all
+	$(MAKE) -C rmi4tool all
 	$(MAKE) -C f54test all
 
 clean:
 	$(MAKE) -C rmidevice clean
 	$(MAKE) -C rmi4update clean
-	$(MAKE) -C rmihidtool clean
+	$(MAKE) -C rmi4tool clean
 	$(MAKE) -C f54test clean
 
 android:
