@@ -39,7 +39,7 @@ public:
 	virtual void RebindDriver() {}
 	~I2CDevice() { Close(); }
 
-	virtual void PrintDeviceInfo() {}
+	virtual void PrintDeviceInfo();
 
 private:
 	int m_fd;

@@ -148,3 +148,8 @@ int I2CDevice::WaitForAttention(struct timeval * timeout, unsigned int source_ma
 	Sleep(500);
 	return 0;
 }
+
+void I2CDevice::PrintDeviceInfo()
+{
+	fprintf(stdout, "I2C device info:\nAddr: 0x%x\n", m_deviceAddress);
+}
