@@ -27,6 +27,9 @@
 
 #include "rmidevice.h"
 
+#include "hiddevice.h"
+#include "i2cdevice.h"
+
 #define RMI_DEVICE_PDT_ENTRY_SIZE		6
 #define RMI_DEVICE_MAX_PAGE			0xFF
 #define RMI_DEVICE_PAGE_SIZE			0x100
@@ -307,6 +310,14 @@ bool RMIDevice::InBootloader()
 		return !!(status & 0x40);
 	}
 	return true;
+}
+
+RMIDevice * CreateRMIDevice(const char * devicename)
+{
+	if (strcasestr(devicename, "hidraw") || strcasestr(devicename, "06cb"))
+		return new HIDDevice();
+	else
+		return new I2CDevice();
 }
 
 long long diff_time(struct timespec *start, struct timespec *end)

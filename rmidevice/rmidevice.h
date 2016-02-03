@@ -104,6 +104,8 @@ protected:
 	unsigned int m_numInterruptRegs;
  };
 
+RMIDevice * CreateRMIDevice(const char * devicename);
+
 /* Utility Functions */
 long long diff_time(struct timespec *start, struct timespec *end);
 int Sleep(int ms);
