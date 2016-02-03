@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "hiddevice.h"
+#include "i2cdevice.h"
 
 #define RMI4UPDATE_GETOPTS      "hp:ir:w:foambde"
 
@@ -283,7 +284,9 @@ int main(int argc, char ** argv)
 		}
 	}
 
-	if (!strncasecmp("hid", protocol, 3)) {
+	if (!strncasecmp("i2c", protocol, 3)) {
+		device = new I2CDevice(0x20);
+	} else if (!strncasecmp("hid", protocol, 3)) {
 		device = new HIDDevice();
 	} else {
 		fprintf(stderr, "Invalid Protocol: %s\n", protocol);
