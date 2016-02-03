@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
+#include <dirent.h>
 
 #include <linux/types.h>
 #include <linux/input.h>
@@ -32,6 +33,7 @@
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
 #include <alloca.h>
+#include <string>
 
 #include "i2cdevice.h"
 
@@ -51,12 +53,20 @@ int I2CDevice::SetRMIPage(unsigned char page)
 	return 0;
 }
 
-int I2CDevice::Open(const char * filename)
+int I2CDevice::Open(const char * devicename)
 {
 	int rc;
+	char filename[PATH_MAX];
 
-	if (!filename)
+	if (!devicename)
 		return -EINVAL;
+
+	m_deviceName = devicename;
+
+	if (!ParseDeviceName(devicename, &m_deviceBus, &m_deviceAddress, filename))
+		return -1;
+
+	UnbindDriver();
 
 	m_fd = open(filename, O_RDWR);
 	if (m_fd < 0)
@@ -141,6 +151,8 @@ void I2CDevice::Close()
 {
 	close(m_fd);
 	m_fd = -1;
+
+	BindDriver();
 }
 
 int I2CDevice::WaitForAttention(struct timeval * timeout, unsigned int source_mask)
@@ -152,4 +164,77 @@ int I2CDevice::WaitForAttention(struct timeval * timeout, unsigned int source_ma
 void I2CDevice::PrintDeviceInfo()
 {
 	fprintf(stdout, "I2C device info:\nAddr: 0x%x\n", m_deviceAddress);
+}
+
+bool I2CDevice::ParseDeviceName(const char * devicename, int * bus, int * addr, char * filename)
+{
+	int rc;
+
+	rc = sscanf(devicename, "%d-%04x", bus, addr);
+	if (!rc && errno)
+		return false;
+
+	rc = snprintf(filename, PATH_MAX, "/dev/i2c-%d", *bus);
+	if (!rc && errno)
+		return false;
+
+	return true;
+}
+
+bool I2CDevice::UnbindDriver()
+{
+	char driverPath[PATH_MAX];
+	char buf[PATH_MAX];
+	char unbindFile[PATH_MAX];
+
+	struct stat stat_buf;
+	int rc;
+	size_t sz;
+
+	rc = snprintf(driverPath, PATH_MAX, "/sys/bus/i2c/devices/%s/driver", m_deviceName.c_str());
+	if (!rc && errno)
+		return false;
+
+	rc = stat(driverPath, &stat_buf);
+	if (rc < 0) {
+		if (errno == ENOENT)
+			// No driver bound, nothing else to do
+			return true;
+		else
+			return false;
+	}
+
+	sz = readlink(driverPath, buf, PATH_MAX);
+	if (sz < 0)
+		return false;
+
+	m_driverName = StripPath(buf, PATH_MAX);
+
+	snprintf(unbindFile, PATH_MAX, "/sys/bus/i2c/drivers/%s/unbind", m_driverName.c_str());
+
+	if (!WriteDeviceNameToFile(unbindFile, m_deviceName.c_str())) {
+		fprintf(stderr, "Failed to unbind I2C device %s: %s\n",
+			m_deviceName.c_str(), strerror(errno));
+		return false;
+	}
+
+	return true;
+}
+
+bool I2CDevice::BindDriver()
+{
+	char bindFile[PATH_MAX];
+
+	if (m_driverName == "")
+		return true;
+
+	snprintf(bindFile, PATH_MAX, "/sys/bus/i2c/drivers/%s/bind", m_driverName.c_str());
+
+	if (!WriteDeviceNameToFile(bindFile, m_deviceName.c_str())) {
+		fprintf(stderr, "Failed to bind I2C device %s: %s\n",
+			m_deviceName.c_str(), strerror(errno));
+		return false;
+	}
+
+	return true;
 }

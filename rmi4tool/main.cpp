@@ -285,7 +285,7 @@ int main(int argc, char ** argv)
 	}
 
 	if (!strncasecmp("i2c", protocol, 3)) {
-		device = new I2CDevice(0x20);
+		device = new I2CDevice();
 	} else if (!strncasecmp("hid", protocol, 3)) {
 		device = new HIDDevice();
 	} else {

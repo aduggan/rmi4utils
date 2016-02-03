@@ -23,10 +23,9 @@
 class I2CDevice : public RMIDevice
 {
 public:
-	I2CDevice(int address) : RMIDevice(),
-			m_deviceOpen(false), m_deviceAddress(address)
+	I2CDevice() : RMIDevice(), m_deviceOpen(false)
 	{}
-	virtual int Open(const char * filename);
+	virtual int Open(const char * devicename);
 	virtual int Read(unsigned short addr, unsigned char *buf,
 				unsigned short len);
 	virtual int Write(unsigned short addr, const unsigned char *buf,
@@ -45,9 +44,17 @@ private:
 	int m_fd;
 	bool m_deviceOpen;
 	int m_deviceAddress;
+	int m_deviceBus;
+	std::string m_deviceName;
+	std::string m_driverName;
 
 	int _Write(unsigned short addr, const unsigned char *buf,
 				 unsigned short len);
+
+	bool UnbindDriver();
+	bool BindDriver();
+
+	static bool ParseDeviceName(const char * devicename, int * bus, int * addr, char * filename);
  };
 
 #endif /* _I2CDEVICE_H_ */
