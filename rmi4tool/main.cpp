@@ -57,7 +57,7 @@ void print_help(const char *prog_name)
 {
 	fprintf(stdout, "Usage: %s [OPTIONS] DEVICEFILE\n", prog_name);
 	fprintf(stdout, "\t-h, --help\t\t\t\tPrint this message\n");
-	fprintf(stdout, "\t-p, --protocol [protocol]\t\tSet which transport prototocl to use.\n");
+	fprintf(stdout, "\t-p, --protocol [protocol]\t\tSet which transport prototocl to use. (deprecated)\n");
 	fprintf(stdout, "\t-i, --interactive\t\t\tRun in interactive mode.\n");
 	fprintf(stdout, "\t-r, --read [address] [length]\t\tRead registers starting at the address.\n");
 	fprintf(stdout, "\t-r, --write [address] [length] [data]\tWrite registers starting at the address.\n");
@@ -203,7 +203,6 @@ int main(int argc, char ** argv)
 	int opt;
 	int index;
 	RMIDevice *device;
-	const char *protocol = "HID";
 	unsigned char report[256];
 	char token[256];
 	static struct option long_options[] = {
@@ -240,7 +239,7 @@ int main(int argc, char ** argv)
 				print_help(argv[0]);
 				return 0;
 			case 'p':
-				protocol = optarg;
+				fprintf(stderr, "protocol flag is deprecated\n");
 				break;
 			case 'i':
 				cmd = RMIHIDTOOL_CMD_INTERACTIVE;
@@ -284,19 +283,12 @@ int main(int argc, char ** argv)
 		}
 	}
 
-	if (!strncasecmp("i2c", protocol, 3)) {
-		device = new I2CDevice();
-	} else if (!strncasecmp("hid", protocol, 3)) {
-		device = new HIDDevice();
-	} else {
-		fprintf(stderr, "Invalid Protocol: %s\n", protocol);
-		return -1;
-	}
-
 	if (optind >= argc) {
 		print_help(argv[0]);
 		return -1;
 	}
+
+	device = CreateRMIDevice(argv[optind]);
 
 	rc = device->Open(argv[optind++]);
 	if (rc) {
