@@ -109,4 +109,5 @@ long long diff_time(struct timespec *start, struct timespec *end);
 int Sleep(int ms);
 void print_buffer(const unsigned char *buf, unsigned int len);
 bool WriteDeviceNameToFile(const char * file, const char * str);
+const char * StripPath(const char * path, ssize_t size);
 #endif /* _RMIDEVICE_H_ */

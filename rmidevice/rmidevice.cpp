@@ -370,3 +370,15 @@ bool WriteDeviceNameToFile(const char * file, const char * str)
 
 	return close(fd) == 0 && size == static_cast<ssize_t>(strlen(str));
 }
+
+const char * StripPath(const char * path, ssize_t size)
+{
+	int i;
+	const char * str;
+
+	for (i = size - 1, str = &path[size - 1]; i > 0; --i, --str)
+		if (path[i - 1] == '/')
+			break;
+
+	return str;
+}
