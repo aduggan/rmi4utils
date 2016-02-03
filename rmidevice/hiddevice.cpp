@@ -68,12 +68,20 @@ enum hid_report_type {
 
 #define SYNAPTICS_VENDOR_ID			0x06cb
 
-int HIDDevice::Open(const char * filename)
+int HIDDevice::Open(const char * devicename)
 {
 	int rc;
 	int desc_size;
+	const char * filename;
 
-	if (!filename)
+	if (!devicename)
+		return -EINVAL;
+
+	if (strstr(devicename, "hidraw"))
+		filename = devicename;
+	else
+		// TODO: add support for looking up the hidraw file from the device name
+		// ie 0003:06CB:1950.0001
 		return -EINVAL;
 
 	m_fd = open(filename, O_RDWR);
