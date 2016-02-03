@@ -32,6 +32,7 @@ public:
 	virtual int Write(unsigned short addr, const unsigned char *buf,
 				 unsigned short len);
 	virtual int SetMode(int mode) { return 0; }
+	virtual int SetRMIPage(unsigned char page);
 	virtual int WaitForAttention(struct timeval * timeout = NULL,
 					unsigned int source_mask = RMI_INTERUPT_SOURCES_ALL_MASK);
 	virtual void Close();
@@ -44,6 +45,9 @@ private:
 	int m_fd;
 	bool m_deviceOpen;
 	int m_deviceAddress;
+
+	int _Write(unsigned short addr, const unsigned char *buf,
+				 unsigned short len);
  };
 
 #endif /* _I2CDEVICE_H_ */

@@ -24,7 +24,6 @@
 #include "rmidevice.h"
 
 #define RMI_DEVICE_PDT_ENTRY_SIZE		6
-#define RMI_DEVICE_PAGE_SELECT_REGISTER		0xFF
 #define RMI_DEVICE_MAX_PAGE			0xFF
 #define RMI_DEVICE_PAGE_SIZE			0x100
 #define RMI_DEVICE_PAGE_SCAN_START		0x00e9
@@ -54,22 +53,6 @@
 
 #define RMI_F01_CMD_DEVICE_RESET	1
 #define RMI_F01_DEFAULT_RESET_DELAY_MS	100
-
-int RMIDevice::SetRMIPage(unsigned char page)
-{
-	int rc;
-
-	if (m_page == page)
-		return 0;
-
-	m_page = page;
-	rc = Write(RMI_DEVICE_PAGE_SELECT_REGISTER, &page, 1);
-	if (rc < 0 || rc < 1) {
-		m_page = -1;
-		return rc;
-	}
-	return 0;
-}
 
 int RMIDevice::QueryBasicProperties()
 {

@@ -23,9 +23,10 @@
 
 #include "rmifunction.h"
 
-#define RMI_PRODUCT_ID_LENGTH		10
+#define RMI_PRODUCT_ID_LENGTH			10
 
-#define RMI_INTERUPT_SOURCES_ALL_MASK	0xFFFFFFFF
+#define RMI_INTERUPT_SOURCES_ALL_MASK		0xFFFFFFFF
+#define RMI_DEVICE_PAGE_SELECT_REGISTER		0xFF
 
 class RMIDevice
 {
@@ -53,7 +54,7 @@ public:
 	int GetFirmwareVersionMinor() { return m_firmwareVersionMinor; }
 	virtual int QueryBasicProperties();
 	
-	int SetRMIPage(unsigned char page);
+	virtual int SetRMIPage(unsigned char page) { return true; }
 	
 	int ScanPDT(int endFunc = 0, int endPage = -1);
 	void PrintProperties();
