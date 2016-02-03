@@ -28,12 +28,12 @@
 #include <string>
 #include <sstream>
 
-#include "hiddevice.h"
+#include "rmidevice.h"
 #include "rmi4update.h"
 
-#define VERSION_MAJOR		1
-#define VERSION_MINOR		2
-#define VERSION_SUBMINOR	2
+#define VERSION_MAJOR		2
+#define VERSION_MINOR		0
+#define VERSION_SUBMINOR	0
 
 #define RMI4UPDATE_GETOPTS	"hfd:plv"
 
@@ -54,45 +54,53 @@ void printVersion()
 		VERSION_MAJOR, VERSION_MINOR, VERSION_SUBMINOR);
 }
 
-int UpdateDevice(FirmwareImage & image, bool force, bool performLockdown, const char * deviceFile)
+int UpdateDevice(FirmwareImage & image, bool force, bool performLockdown, const char * deviceName)
 {
-	HIDDevice rmidevice;
+	RMIDevice *rmidevice;
 	int rc;
 
-	rc = rmidevice.Open(deviceFile);
-	if (rc)
-		return rc;
+	rmidevice = CreateRMIDevice(deviceName);
 
-	RMI4Update update(rmidevice, image);
+	rc = rmidevice->Open(deviceName);
+	if (rc) {
+		delete rmidevice;
+		return rc;
+	}
+
+	RMI4Update update(*rmidevice, image);
 	rc = update.UpdateFirmware(force, performLockdown);
-	if (rc != UPDATE_SUCCESS)
-		return rc;
 
+	delete rmidevice;
 	return rc;
 }
 
-int GetFirmwareProps(const char * deviceFile, std::string &props)
+int GetFirmwareProps(const char * deviceName, std::string &props)
 {
-	HIDDevice rmidevice;
+	RMIDevice *rmidevice;
 	int rc = UPDATE_SUCCESS;
 	std::stringstream ss;
 
-	rc = rmidevice.Open(deviceFile);
-	if (rc)
+	rmidevice = CreateRMIDevice(deviceName);
+
+	rc = rmidevice->Open(deviceName);
+	if (rc) {
+		delete rmidevice;
 		return rc;
+	}
 
-	rmidevice.ScanPDT(0x1);
-	rmidevice.QueryBasicProperties();
+	rmidevice->ScanPDT(0x1);
+	rmidevice->QueryBasicProperties();
 
-	ss << rmidevice.GetFirmwareVersionMajor() << "."
-		<< rmidevice.GetFirmwareVersionMinor() << "."
-		<< std::hex << rmidevice.GetFirmwareID();
+	ss << rmidevice->GetFirmwareVersionMajor() << "."
+		<< rmidevice->GetFirmwareVersionMinor() << "."
+		<< std::hex << rmidevice->GetFirmwareID();
 
-	if (rmidevice.InBootloader())
+	if (rmidevice->InBootloader())
 		ss << " bootloader";
 
 	props = ss.str();
 
+	delete rmidevice;
 	return rc;
 }
 
