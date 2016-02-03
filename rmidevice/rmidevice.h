@@ -108,4 +108,5 @@ protected:
 long long diff_time(struct timespec *start, struct timespec *end);
 int Sleep(int ms);
 void print_buffer(const unsigned char *buf, unsigned int len);
+bool WriteDeviceNameToFile(const char * file, const char * str);
 #endif /* _RMIDEVICE_H_ */
