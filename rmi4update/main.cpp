@@ -42,7 +42,7 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "Usage: %s [OPTIONS] FIRMWAREFILE\n", prog_name);
 	fprintf(stdout, "\t-h, --help\tPrint this message\n");
 	fprintf(stdout, "\t-f, --force\tForce updating firmware even it the image provided is older\n\t\t\tthen the current firmware on the device.\n");
-	fprintf(stdout, "\t-d, --device\thidraw device file associated with the device being updated.\n");
+	fprintf(stdout, "\t-d, --device\tname of device being updated.\n");
 	fprintf(stdout, "\t-p, --fw-props\tPrint the firmware properties.\n");
 	fprintf(stdout, "\t-l, --lockdown\tPerform lockdown.\n");
 	fprintf(stdout, "\t-v, --version\tPrint version number.\n");
