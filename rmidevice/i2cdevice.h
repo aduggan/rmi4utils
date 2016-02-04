@@ -34,6 +34,8 @@ public:
 	virtual int SetRMIPage(unsigned char page);
 	virtual int WaitForAttention(int timeout_ms = 0,
 					unsigned int source_mask = RMI_INTERUPT_SOURCES_ALL_MASK);
+	virtual int GetAttentionData(int timeout_ms, unsigned int source_mask,
+					unsigned char *buf, unsigned int *len);
 	virtual void Close();
 	virtual void RebindDriver() {}
 	~I2CDevice() { Close(); }

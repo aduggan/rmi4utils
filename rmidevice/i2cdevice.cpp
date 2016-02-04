@@ -157,13 +157,24 @@ void I2CDevice::Close()
 
 int I2CDevice::WaitForAttention(int timeout_ms, unsigned int source_mask)
 {
+	return GetAttentionData(timeout_ms, source_mask, NULL, NULL);
+}
+
+int I2CDevice::GetAttentionData(int timeout_ms, unsigned int source_mask,
+					unsigned char *buf, unsigned int *len)
+{
 	int time_remaining = timeout_ms;
 	int status;
 
 	while (!timeout_ms || time_remaining > 0) {
 		status = ReadInterruptStatus();
-		if (status > 0 && (status & source_mask))
+		if (status > 0 && (status & source_mask)) {
+			if (buf && len) {
+				buf[0] = status;
+				*len = 1;
+			}
 			return 1;
+		}
 
 		Sleep(500);
 		time_remaining -= 500;
