@@ -155,7 +155,7 @@ void I2CDevice::Close()
 	BindDriver();
 }
 
-int I2CDevice::WaitForAttention(struct timeval * timeout, unsigned int source_mask)
+int I2CDevice::WaitForAttention(int timeout_ms, unsigned int source_mask)
 {
 	Sleep(500);
 	return 0;

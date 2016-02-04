@@ -38,9 +38,9 @@ public:
 	virtual int Write(unsigned short addr, const unsigned char *buf,
 				 unsigned short len);
 	virtual int SetMode(int mode);
-	virtual int WaitForAttention(struct timeval * timeout = NULL,
+	virtual int WaitForAttention(int timeout_ms = 0,
 					unsigned int source_mask = RMI_INTERUPT_SOURCES_ALL_MASK);
-	virtual int GetAttentionReport(struct timeval * timeout, unsigned int source_mask,
+	virtual int GetAttentionReport(int timeout_ms, unsigned int source_mask,
 					unsigned char *buf, unsigned int *len);
 	virtual void Close();
 	virtual void RebindDriver();

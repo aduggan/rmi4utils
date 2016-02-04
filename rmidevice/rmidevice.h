@@ -40,9 +40,9 @@ public:
 	virtual int Write(unsigned short addr, const unsigned char *data,
 				 unsigned short len) = 0;
 	virtual int SetMode(int mode) { return -1; /* Unsupported */ }
-	virtual int WaitForAttention(struct timeval * timeout = NULL,
+	virtual int WaitForAttention(int timeout_ms = 0,
 			unsigned int source_mask = RMI_INTERUPT_SOURCES_ALL_MASK) = 0;
-	virtual int GetAttentionReport(struct timeval * timeout, unsigned int source_mask,
+	virtual int GetAttentionReport(int timeout_ms, unsigned int source_mask,
 					unsigned char *buf, unsigned int *len)
 	{ return -1; /* Unsupported */ }
 	virtual void Close() = 0;

@@ -480,13 +480,9 @@ int RMI4Update::WriteBlocks(unsigned char *block, unsigned short count, unsigned
 int RMI4Update::WaitForIdle(int timeout_ms, bool readF34OnSucess)
 {
 	int rc = 0;
-	struct timeval tv;
 
 	if (timeout_ms > 0) {
-		tv.tv_sec = timeout_ms / 1000;
-		tv.tv_usec = (timeout_ms % 1000) * 1000;
-
-		rc = m_device.WaitForAttention(&tv, m_f34.GetInterruptMask());
+		rc = m_device.WaitForAttention(timeout_ms, m_f34.GetInterruptMask());
 		if (rc == -ETIMEDOUT)
 			/*
 			 * If for some reason we are not getting attention reports for HID devices

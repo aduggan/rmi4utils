@@ -372,16 +372,24 @@ void HIDDevice::Close()
 	m_attnData = NULL;
 }
 
-int HIDDevice::WaitForAttention(struct timeval * timeout, unsigned int source_mask)
+int HIDDevice::WaitForAttention(int timeout_ms, unsigned int source_mask)
 {
-	return GetAttentionReport(timeout, source_mask, NULL, NULL);
+	return GetAttentionReport(timeout_ms, source_mask, NULL, NULL);
 }
 
-int HIDDevice::GetAttentionReport(struct timeval * timeout, unsigned int source_mask,
+int HIDDevice::GetAttentionReport(int timeout_ms, unsigned int source_mask,
 					unsigned char *buf, unsigned int *len)
 {
 	int rc = 0;
 	int reportId;
+	struct timeval *timeout = NULL;
+	struct timeval tv;
+
+	if (timeout_ms) {
+		tv.tv_sec = timeout_ms / 1000;
+		tv.tv_usec = (timeout_ms % 1000) * 1000;
+		timeout = &tv;
+	}
 
 	// Assume the Linux implementation of select with timeout set to the
 	// time remaining.

@@ -32,7 +32,7 @@ public:
 				 unsigned short len);
 	virtual int SetMode(int mode) { return 0; }
 	virtual int SetRMIPage(unsigned char page);
-	virtual int WaitForAttention(struct timeval * timeout = NULL,
+	virtual int WaitForAttention(int timeout_ms = 0,
 					unsigned int source_mask = RMI_INTERUPT_SOURCES_ALL_MASK);
 	virtual void Close();
 	virtual void RebindDriver() {}
