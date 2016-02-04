@@ -374,10 +374,10 @@ void HIDDevice::Close()
 
 int HIDDevice::WaitForAttention(int timeout_ms, unsigned int source_mask)
 {
-	return GetAttentionReport(timeout_ms, source_mask, NULL, NULL);
+	return GetAttentionData(timeout_ms, source_mask, NULL, NULL);
 }
 
-int HIDDevice::GetAttentionReport(int timeout_ms, unsigned int source_mask,
+int HIDDevice::GetAttentionData(int timeout_ms, unsigned int source_mask,
 					unsigned char *buf, unsigned int *len)
 {
 	int rc = 0;

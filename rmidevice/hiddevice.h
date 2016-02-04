@@ -40,7 +40,7 @@ public:
 	virtual int SetMode(int mode);
 	virtual int WaitForAttention(int timeout_ms = 0,
 					unsigned int source_mask = RMI_INTERUPT_SOURCES_ALL_MASK);
-	virtual int GetAttentionReport(int timeout_ms, unsigned int source_mask,
+	virtual int GetAttentionData(int timeout_ms, unsigned int source_mask,
 					unsigned char *buf, unsigned int *len);
 	virtual void Close();
 	virtual void RebindDriver();
