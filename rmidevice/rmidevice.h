@@ -62,6 +62,7 @@ public:
 	int Reset();
 
 	bool InBootloader();
+	int ReadInterruptStatus();
 
 	bool GetFunction(RMIFunction &func, int functionNumber);
 	void PrintFunctions();

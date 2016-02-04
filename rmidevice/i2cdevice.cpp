@@ -157,8 +157,19 @@ void I2CDevice::Close()
 
 int I2CDevice::WaitForAttention(int timeout_ms, unsigned int source_mask)
 {
-	Sleep(500);
-	return 0;
+	int time_remaining = timeout_ms;
+	int status;
+
+	while (!timeout_ms || time_remaining > 0) {
+		status = ReadInterruptStatus();
+		if (status > 0 && (status & source_mask))
+			return 1;
+
+		Sleep(500);
+		time_remaining -= 500;
+	}
+
+	return -ETIMEDOUT;
 }
 
 void I2CDevice::PrintDeviceInfo()

@@ -312,6 +312,20 @@ bool RMIDevice::InBootloader()
 	return true;
 }
 
+int RMIDevice::ReadInterruptStatus()
+{
+	RMIFunction f01;
+	if (GetFunction(f01, 0x01)) {
+		int rc;
+		unsigned char status;
+
+		rc = Read(f01.GetDataBase() + 1, &status, 1);
+		if (rc == 1)
+			return status;
+	}
+	return -1;
+}
+
 RMIDevice * CreateRMIDevice(const char * devicename)
 {
 	if (strcasestr(devicename, "hidraw") || strcasestr(devicename, "06cb"))
