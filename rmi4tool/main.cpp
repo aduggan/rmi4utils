@@ -335,6 +335,7 @@ int main(int argc, char ** argv)
 			break;
 		case RMIHIDTOOL_CMD_ATTN:
 			report_attn = 1;
+			device->ScanPDT();
 			while(report_attn) {
 				unsigned int bytes = 256;
 				rc = device->GetAttentionData(0,
