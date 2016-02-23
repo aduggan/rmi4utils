@@ -34,13 +34,14 @@
 
 #include "hiddevice.h"
 
-#define RMI4UPDATE_GETOPTS      "hp:ir:w:foambde"
+#define RMI4UPDATE_GETOPTS      "hp:ir:w:foambdec"
 
  enum rmihidtool_cmd {
 	RMIHIDTOOL_CMD_INTERACTIVE,
 	RMIHIDTOOL_CMD_READ,
 	RMIHIDTOOL_CMD_WRITE,
 	RMIHIDTOOL_CMD_FW_ID,
+	RMIHIDTOOL_CMD_CF_ID,
 	RMIHIDTOOL_CMD_PROPS,
 	RMIHIDTOOL_CMD_ATTN,
 	RMIHIDTOOL_CMD_PRINT_FUNCTIONS,
@@ -61,6 +62,7 @@ void print_help(const char *prog_name)
 	fprintf(stdout, "\t-r, --read [address] [length]\t\tRead registers starting at the address.\n");
 	fprintf(stdout, "\t-r, --write [address] [length] [data]\tWrite registers starting at the address.\n");
 	fprintf(stdout, "\t-f, --firmware-id\t\t\tPrint the firmware id\n");
+	fprintf(stdout, "\t-c, --config-id\t\t\t\tPrint the config id\n");
 	fprintf(stdout, "\t-o, --props\t\t\t\tPrint device properties\n");
 	fprintf(stdout, "\t-a, --attention\t\t\t\tPrint attention reports until control + c\n");
 	fprintf(stdout, "\t-m, --print-functions\t\t\tPrint RMI4 functions for the device.\n");
@@ -212,6 +214,7 @@ int main(int argc, char ** argv)
 		{"read", 1, NULL, 'r'},
 		{"write", 1, NULL, 'w'},
 		{"firmware-id", 0, NULL, 'f'},
+		{"config-id", 0, NULL, 'c'},
 		{"props", 0, NULL, 'o'},
 		{"attention", 0, NULL, 'a'},
 		{"print-functions", 0, NULL, 'm'},
@@ -256,6 +259,9 @@ int main(int argc, char ** argv)
 				break;
 			case 'f':
 				cmd = RMIHIDTOOL_CMD_FW_ID;
+				break;
+			case 'c':
+				cmd = RMIHIDTOOL_CMD_CF_ID;
 				break;
 			case 'o':
 				cmd = RMIHIDTOOL_CMD_PROPS;
@@ -332,6 +338,11 @@ int main(int argc, char ** argv)
 			device->ScanPDT();
 			device->QueryBasicProperties();
 			fprintf(stdout, "firmware id: %lu\n", device->GetFirmwareID());
+			break;
+		case RMIHIDTOOL_CMD_CF_ID:
+			device->ScanPDT();
+			device->QueryBasicProperties();
+			fprintf(stdout, "config id: %08lx\n", device->GetConfigID());
 			break;
 		case RMIHIDTOOL_CMD_PROPS:
 			device->ScanPDT();

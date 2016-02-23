@@ -49,6 +49,7 @@ public:
 	virtual void RebindDriver() = 0;
 
 	unsigned long GetFirmwareID() { return m_buildID; }
+	unsigned long GetConfigID() { return m_configID; }
 	int GetFirmwareVersionMajor() { return m_firmwareVersionMajor; }
 	int GetFirmwareVersionMinor() { return m_firmwareVersionMinor; }
 	virtual int QueryBasicProperties();
@@ -82,6 +83,7 @@ protected:
 	unsigned short m_packageID;
 	unsigned short m_packageRev;
 	unsigned long m_buildID;
+	unsigned long m_configID;
 	unsigned char m_sensorID;
 	unsigned long m_boardID;
 
