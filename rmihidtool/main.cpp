@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
@@ -34,7 +35,7 @@
 
 #include "hiddevice.h"
 
-#define RMI4UPDATE_GETOPTS      "hp:ir:w:foambdec"
+#define RMI4UPDATE_GETOPTS      "hp:ir:w:foambd:ecn"
 
  enum rmihidtool_cmd {
 	RMIHIDTOOL_CMD_INTERACTIVE,
@@ -57,6 +58,7 @@ void print_help(const char *prog_name)
 {
 	fprintf(stdout, "Usage: %s [OPTIONS] DEVICEFILE\n", prog_name);
 	fprintf(stdout, "\t-h, --help\t\t\t\tPrint this message\n");
+	fprintf(stdout, "\t-d, --device\t\t\thidraw device file associated with the device.\n");
 	fprintf(stdout, "\t-p, --protocol [protocol]\t\tSet which transport prototocl to use.\n");
 	fprintf(stdout, "\t-i, --interactive\t\t\tRun in interactive mode.\n");
 	fprintf(stdout, "\t-r, --read [address] [length]\t\tRead registers starting at the address.\n");
@@ -67,7 +69,7 @@ void print_help(const char *prog_name)
 	fprintf(stdout, "\t-a, --attention\t\t\t\tPrint attention reports until control + c\n");
 	fprintf(stdout, "\t-m, --print-functions\t\t\tPrint RMI4 functions for the device.\n");
 	fprintf(stdout, "\t-b, --rebind-driver\t\t\tRebind the driver to force an update of device properties.\n");
-	fprintf(stdout, "\t-d, --device-info\t\t\tPrint protocol specific information about the device.\n");
+	fprintf(stdout, "\t-n, --device-info\t\t\tPrint protocol specific information about the device.\n");
 	fprintf(stdout, "\t-e, --reset-device\t\t\tReset the device.\n");
 }
 
@@ -203,12 +205,14 @@ int main(int argc, char ** argv)
 	struct sigaction sig_cleanup_action;
 	int opt;
 	int index;
+	char *deviceName = NULL;
 	RMIDevice *device;
 	const char *protocol = "HID";
 	unsigned char report[256];
 	char token[256];
 	static struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
+		{"device", 1, NULL, 'd'},
 		{"protocol", 1, NULL, 'p'},
 		{"interactive", 0, NULL, 'i'},
 		{"read", 1, NULL, 'r'},
@@ -219,7 +223,7 @@ int main(int argc, char ** argv)
 		{"attention", 0, NULL, 'a'},
 		{"print-functions", 0, NULL, 'm'},
 		{"rebind-driver", 0, NULL, 'b'},
-		{"device-info", 0, NULL, 'd'},
+		{"device-info", 0, NULL, 'n'},
 		{"reset-device", 0, NULL, 'e'},
 		{0, 0, 0, 0},
 	};
@@ -230,6 +234,10 @@ int main(int argc, char ** argv)
 	char * start;
 	char * end;
 	int i = 0;
+	struct dirent * devDirEntry;
+	DIR * devDir;
+	char deviceFile[PATH_MAX];
+	bool found = false;
 
 	memset(&sig_cleanup_action, 0, sizeof(struct sigaction));
 	sig_cleanup_action.sa_handler = cleanup;
@@ -243,6 +251,9 @@ int main(int argc, char ** argv)
 				return 0;
 			case 'p':
 				protocol = optarg;
+				break;
+			case 'd':
+				deviceName = optarg;
 				break;
 			case 'i':
 				cmd = RMIHIDTOOL_CMD_INTERACTIVE;
@@ -275,7 +286,7 @@ int main(int argc, char ** argv)
 			case 'b':
 				cmd = RMIHIDTOOL_CMD_REBIND_DRIVER;
 				break;
-			case 'd':
+			case 'n':
 				cmd = RMIHIDTOOL_CMD_PRINT_DEVICE_INFO;
 				break;
 			case 'e':
@@ -296,16 +307,39 @@ int main(int argc, char ** argv)
 		return -1;
 	}
 
-	if (optind >= argc) {
+	if (optind != argc) {
 		print_help(argv[0]);
 		return -1;
 	}
 
-	rc = device->Open(argv[optind++]);
-	if (rc) {
-		fprintf(stderr, "%s: failed to initialize rmi device (%d): %s\n", argv[0], errno,
-			strerror(errno));
-		return 1;
+	if (deviceName) {
+		rc = device->Open(deviceName);
+		if (rc) {
+			fprintf(stderr, "%s: failed to initialize rmi device (%d): %s\n", argv[0], errno,
+				strerror(errno));
+			return 1;
+		}
+	} else {
+		devDir = opendir("/dev");
+		if (!devDir)
+			return -1;
+
+		while ((devDirEntry = readdir(devDir)) != NULL) {
+			if (strstr(devDirEntry->d_name, "hidraw")) {
+				snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
+				rc = device->Open(deviceFile);
+				if (rc != 0) {
+					continue;
+				} else {
+					found = true;
+					break;
+				}
+			}
+		}
+		closedir(devDir);
+
+		if (!found)
+			return -1;
 	}
 
 	g_device = device;
