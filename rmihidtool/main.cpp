@@ -121,6 +121,8 @@ void interactive(RMIDevice * device, unsigned char *report)
 
 	for (;;) {
 		fprintf(stdout, "\n");
+		device->PrintDeviceInfo();
+		fprintf(stdout, "\n");
 		print_cmd_usage();
 		char input[256];
 
