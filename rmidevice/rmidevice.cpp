@@ -199,8 +199,8 @@ int RMIDevice::QueryBasicProperties()
 			fprintf(stderr, "Failed to read the config id: %s\n", strerror(errno));
 			return rc;
 		}
-		m_configID = configid[0] << 24 | configid[1] << 16
-				| configid[2] << 8 | configid[3];
+		m_configID = (configid[0] << 24 | configid[1] << 16
+				| configid[2] << 8 | configid[3]) & 0xFFFFFFFF;
 	}
 
 	return 0;
