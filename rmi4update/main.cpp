@@ -35,7 +35,7 @@
 #define VERSION_MINOR		2
 #define VERSION_SUBMINOR	4
 
-#define RMI4UPDATE_GETOPTS	"hfd:plv"
+#define RMI4UPDATE_GETOPTS	"hfd:pclv"
 
 void printHelp(const char *prog_name)
 {
@@ -44,6 +44,7 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "\t-f, --force\tForce updating firmware even it the image provided is older\n\t\t\tthen the current firmware on the device.\n");
 	fprintf(stdout, "\t-d, --device\thidraw device file associated with the device being updated.\n");
 	fprintf(stdout, "\t-p, --fw-props\tPrint the firmware properties.\n");
+	fprintf(stdout, "\t-c, --config-id\tPrint the config id.\n");
 	fprintf(stdout, "\t-l, --lockdown\tPerform lockdown.\n");
 	fprintf(stdout, "\t-v, --version\tPrint version number.\n");
 }
@@ -71,7 +72,7 @@ int UpdateDevice(FirmwareImage & image, bool force, bool performLockdown, const 
 	return rc;
 }
 
-int GetFirmwareProps(const char * deviceFile, std::string &props)
+int GetFirmwareProps(const char * deviceFile, std::string &props, bool configid)
 {
 	HIDDevice rmidevice;
 	int rc = UPDATE_SUCCESS;
@@ -84,12 +85,16 @@ int GetFirmwareProps(const char * deviceFile, std::string &props)
 	rmidevice.ScanPDT(0x1);
 	rmidevice.QueryBasicProperties();
 
-	ss << rmidevice.GetFirmwareVersionMajor() << "."
-		<< rmidevice.GetFirmwareVersionMinor() << "."
-		<< std::hex << rmidevice.GetFirmwareID();
+	if (configid) {
+		ss << std::hex << rmidevice.GetConfigID();
+	} else {
+		ss << rmidevice.GetFirmwareVersionMajor() << "."
+			<< rmidevice.GetFirmwareVersionMinor() << "."
+			<< std::hex << rmidevice.GetFirmwareID();
 
-	if (rmidevice.InBootloader())
-		ss << " bootloader";
+		if (rmidevice.InBootloader())
+			ss << " bootloader";
+	}
 
 	props = ss.str();
 
@@ -110,6 +115,7 @@ int main(int argc, char **argv)
 		{"force", 0, NULL, 'f'},
 		{"device", 1, NULL, 'd'},
 		{"fw-props", 0, NULL, 'p'},
+		{"config-id", 0, NULL, 'c'},
 		{"lockdown", 0, NULL, 'l'},
 		{"version", 0, NULL, 'v'},
 		{0, 0, 0, 0},
@@ -117,6 +123,7 @@ int main(int argc, char **argv)
 	struct dirent * devDirEntry;
 	DIR * devDir;
 	bool printFirmwareProps = false;
+	bool printConfigid = false;
 	bool performLockdown = false;
 
 	while ((opt = getopt_long(argc, argv, RMI4UPDATE_GETOPTS, long_options, &index)) != -1) {
@@ -132,6 +139,10 @@ int main(int argc, char **argv)
 				break;
 			case 'p':
 				printFirmwareProps = true;
+				break;
+			case 'c':
+				printFirmwareProps = true;
+				printConfigid = true;
 				break;
 			case 'l':
 				performLockdown = true;
@@ -152,7 +163,7 @@ int main(int argc, char **argv)
 			fprintf(stderr, "Specifiy which device to query\n");
 			return 1;
 		}
-		rc = GetFirmwareProps(deviceName, props);
+		rc = GetFirmwareProps(deviceName, props, printConfigid);
 		if (rc) {
 			fprintf(stderr, "Failed to read properties from device: %s\n", update_err_to_string(rc));
 			return 1;
