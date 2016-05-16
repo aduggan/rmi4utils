@@ -55,23 +55,6 @@ void printVersion()
 		VERSION_MAJOR, VERSION_MINOR, VERSION_SUBMINOR);
 }
 
-int UpdateDevice(FirmwareImage & image, bool force, bool performLockdown, const char * deviceFile)
-{
-	HIDDevice rmidevice;
-	int rc;
-
-	rc = rmidevice.Open(deviceFile);
-	if (rc)
-		return rc;
-
-	RMI4Update update(rmidevice, image);
-	rc = update.UpdateFirmware(force, performLockdown);
-	if (rc != UPDATE_SUCCESS)
-		return rc;
-
-	return rc;
-}
-
 int GetFirmwareProps(const char * deviceFile, std::string &props, bool configid)
 {
 	HIDDevice rmidevice;
@@ -120,11 +103,10 @@ int main(int argc, char **argv)
 		{"version", 0, NULL, 'v'},
 		{0, 0, 0, 0},
 	};
-	struct dirent * devDirEntry;
-	DIR * devDir;
 	bool printFirmwareProps = false;
 	bool printConfigid = false;
 	bool performLockdown = false;
+	HIDDevice device;
 
 	while ((opt = getopt_long(argc, argv, RMI4UPDATE_GETOPTS, long_options, &index)) != -1) {
 		switch (opt) {
@@ -186,36 +168,20 @@ int main(int argc, char **argv)
 	}
 
 	if (deviceName) {
-		rc = UpdateDevice(image, force, performLockdown, deviceName);
-
-		return rc;
-	} else {
-		char deviceFile[PATH_MAX];
-		bool found = false;
-
-		devDir = opendir("/dev");
-		if (!devDir)
-			return -1;
-
-		while ((devDirEntry = readdir(devDir)) != NULL) {
-			if (strstr(devDirEntry->d_name, "hidraw")) {
-				char rawDevice[PATH_MAX];
-				strncpy(rawDevice, devDirEntry->d_name, PATH_MAX);
-				snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
-				rc = UpdateDevice(image, force, performLockdown, deviceFile);
-				if (rc != 0) {
-					continue;
-				} else {
-					found = true;
-					break;
-				}
-			}
+		 rc = device.Open(deviceName);
+		 if (rc) {
+			fprintf(stderr, "%s: failed to initialize rmi device (%d): %s\n", argv[0], errno,
+				strerror(errno));
+			return 1;
 		}
-		closedir(devDir);
-
-		if (!found)
-			return rc;
+	} else {
+		if (!device.FindDevice())
+			return 1;
 	}
 
-	return 0;
+
+	RMI4Update update(device, image);
+	rc = update.UpdateFirmware(force, performLockdown);
+
+	return rc == UPDATE_SUCCESS ? 0 : 1;
 }
