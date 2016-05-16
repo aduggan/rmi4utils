@@ -35,7 +35,7 @@
 
 #include "hiddevice.h"
 
-#define RMI4UPDATE_GETOPTS      "hp:ir:w:foambd:ecn"
+#define RMI4UPDATE_GETOPTS      "hp:ir:w:foambd:ecnt:"
 
  enum rmihidtool_cmd {
 	RMIHIDTOOL_CMD_INTERACTIVE,
@@ -71,6 +71,7 @@ void print_help(const char *prog_name)
 	fprintf(stdout, "\t-b, --rebind-driver\t\t\tRebind the driver to force an update of device properties.\n");
 	fprintf(stdout, "\t-n, --device-info\t\t\tPrint protocol specific information about the device.\n");
 	fprintf(stdout, "\t-e, --reset-device\t\t\tReset the device.\n");
+	fprintf(stdout, "\t-t, --device-type\t\t\tFilter by device type [touchpad or touchscreen].\n");
 }
 
 void print_cmd_usage()
@@ -212,6 +213,7 @@ int main(int argc, char ** argv)
 	const char *protocol = "HID";
 	unsigned char report[256];
 	char token[256];
+	enum RMIDeviceType deviceType = RMI_DEVICE_TYPE_ANY;
 	static struct option long_options[] = {
 		{"help", 0, NULL, 'h'},
 		{"device", 1, NULL, 'd'},
@@ -227,6 +229,7 @@ int main(int argc, char ** argv)
 		{"rebind-driver", 0, NULL, 'b'},
 		{"device-info", 0, NULL, 'n'},
 		{"reset-device", 0, NULL, 'e'},
+		{"device-type", 1, NULL, 't'},
 		{0, 0, 0, 0},
 	};
 	enum rmihidtool_cmd cmd = RMIHIDTOOL_CMD_INTERACTIVE;
@@ -290,6 +293,12 @@ int main(int argc, char ** argv)
 			case 'e':
 				cmd = RMIHIDTOOL_CMD_RESET_DEVICE;
 				break;
+			case 't':
+				if (!strcasecmp(optarg, "touchpad"))
+					deviceType = RMI_DEVICE_TYPE_TOUCHPAD;
+				else if (!strcasecmp(optarg, "touchscreen"))
+					deviceType = RMI_DEVICE_TYPE_TOUCHSCREEN;
+				break;
 			default:
 				print_help(argv[0]);
 				return 0;
@@ -318,7 +327,7 @@ int main(int argc, char ** argv)
 			return 1;
 		}
 	} else {
-		if (!device->FindDevice())
+		if (!device->FindDevice(deviceType))
 			return -1;
 	}
 

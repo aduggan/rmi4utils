@@ -34,7 +34,7 @@
 #include "f54test.h"
 #include "display.h"
 
-#define F54TEST_GETOPTS	"hd:r:cn"
+#define F54TEST_GETOPTS	"hd:r:cnt:"
 
 static bool stopRequested;
 
@@ -46,6 +46,7 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "\t-r, --report_type\tReport type.\n");
 	fprintf(stdout, "\t-c, --continuous\tContinuous mode.\n");
 	fprintf(stdout, "\t-n, --no_reset\tDo not reset after the report.\n");
+	fprintf(stdout, "\t-t, --device-type\t\t\tFilter by device type [touchpad or touchscreen].\n");
 }
 
 int RunF54Test(RMIDevice & rmidevice, f54_report_types reportType, bool continuousMode, bool noReset)
@@ -102,12 +103,14 @@ int main(int argc, char **argv)
 		{"report_type", 1, NULL, 'r'},
 		{"continuous", 0, NULL, 'c'},
 		{"no_reset", 0, NULL, 'n'},
+		{"device-type", 1, NULL, 't'},
 		{0, 0, 0, 0},
 	};
 	f54_report_types reportType = F54_16BIT_IMAGE;
 	bool continuousMode = false;
 	bool noReset = false;
 	HIDDevice device;
+	enum RMIDeviceType deviceType = RMI_DEVICE_TYPE_ANY;
 
 	while ((opt = getopt_long(argc, argv, F54TEST_GETOPTS, long_options, &index)) != -1) {
 		switch (opt) {
@@ -125,6 +128,12 @@ int main(int argc, char **argv)
 				break;
 			case 'n':
 				noReset = true;
+				break;
+			case 't':
+				if (!strcasecmp(optarg, "touchpad"))
+					deviceType = RMI_DEVICE_TYPE_TOUCHPAD;
+				else if (!strcasecmp(optarg, "touchscreen"))
+					deviceType = RMI_DEVICE_TYPE_TOUCHSCREEN;
 				break;
 			default:
 				break;
@@ -147,7 +156,7 @@ int main(int argc, char **argv)
 			return 1;
 		}
 	} else {
-		if (!device.FindDevice())
+		if (!device.FindDevice(deviceType))
 			return 1;
 	}
 

@@ -101,7 +101,7 @@ int HIDDevice::Open(const char * filename)
 		return -1;
 	}
 
-	ParseReportSizes();
+	ParseReportDescriptor();
 
 	m_inputReport = new unsigned char[m_inputReportSize]();
 	if (!m_inputReport) {
@@ -136,7 +136,7 @@ int HIDDevice::Open(const char * filename)
 	return 0;
 }
 
-void HIDDevice::ParseReportSizes()
+void HIDDevice::ParseReportDescriptor()
 {
 	bool isVendorSpecific = false;
 	bool isReport = false;
@@ -144,10 +144,18 @@ void HIDDevice::ParseReportSizes()
 	int reportSize = 0;
 	int reportCount = 0;
 	enum hid_report_type hidReportType = HID_REPORT_TYPE_UNKNOWN;
+	bool inCollection = false;
 
 	for (unsigned int i = 0; i < m_rptDesc.size; ++i) {
+		if (m_rptDesc.value[i] == 0xc0) {
+			inCollection = false;
+			isVendorSpecific = false;
+			isReport = false;
+			continue;
+		}
+
 		if (isVendorSpecific) {
-			if (m_rptDesc.value[i] == 0x85 || m_rptDesc.value[i] == 0xc0) {
+			if (m_rptDesc.value[i] == 0x85) {
 				if (isReport) {
 					// finish up data on the previous report
 					totalReportSize = (reportSize * reportCount) >> 3;
@@ -174,13 +182,7 @@ void HIDDevice::ParseReportSizes()
 				reportCount = 0;
 				hidReportType = HID_REPORT_TYPE_UNKNOWN;
 
-				if (m_rptDesc.value[i] == 0x85)
-					isReport = true;
-				else
-					isReport = false;
-
-				if (m_rptDesc.value[i] == 0xc0)
-					isVendorSpecific = false;
+				isReport = true;
 			}
 
 			if (isReport) {
@@ -210,12 +212,49 @@ void HIDDevice::ParseReportSizes()
 			}
 		}
 
-		if (i + 2 >= m_rptDesc.size)
-			return;
-		if (m_rptDesc.value[i] == 0x06 && m_rptDesc.value[i + 1] == 0x00
-						&& m_rptDesc.value[i + 2] == 0xFF) {
-			isVendorSpecific = true;
-			i += 2;
+		if (!inCollection) {
+			switch (m_rptDesc.value[i]) {
+				case 0x00:
+				case 0x01:
+				case 0x02:
+				case 0x03:
+				case 0x04:
+					inCollection = true;
+					break;
+				case 0x05:
+					inCollection = true;
+
+					if (i + 3 >= m_rptDesc.size)
+						break;
+
+					// touchscreens with active pen have a Generic Mouse collection
+					// so stop searching if we have already found the touchscreen digitizer
+					// usage.
+					if (m_deviceType == RMI_DEVICE_TYPE_TOUCHSCREEN)
+						break;
+
+					if (m_rptDesc.value[i + 1] == 0x01) {
+						if (m_rptDesc.value[i + 2] == 0x09 && m_rptDesc.value[i + 3] == 0x02)
+							m_deviceType = RMI_DEVICE_TYPE_TOUCHPAD;
+					} else if (m_rptDesc.value[i + 1] == 0x0d) {
+						if (m_rptDesc.value[i + 2] == 0x09 && m_rptDesc.value[i + 3] == 0x04)
+							m_deviceType = RMI_DEVICE_TYPE_TOUCHSCREEN;
+					}
+					i += 3;
+					break;
+				case 0x06:
+					inCollection = true;
+					if (i + 2 >= m_rptDesc.size)
+						break;
+
+					if (m_rptDesc.value[i + 1] == 0x00 && m_rptDesc.value[i + 2] == 0xFF)
+						isVendorSpecific = true;
+					i += 2;
+					break;
+				default:
+					break;
+
+			}
 		}
 	}
 }
@@ -528,10 +567,15 @@ void HIDDevice::PrintReport(const unsigned char *report)
 // Print protocol specific device information
 void HIDDevice::PrintDeviceInfo()
 {
+	enum RMIDeviceType deviceType = GetDeviceType();
+
 	fprintf(stdout, "HID device info:\nBus: %s Vendor: 0x%04x Product: 0x%04x\n",
 		m_info.bustype == BUS_I2C ? "I2C" : "USB", m_info.vendor, m_info.product);
 	fprintf(stdout, "Report sizes: input: %ld output: %ld\n", (unsigned long)m_inputReportSize,
 		(unsigned long)m_outputReportSize);
+	if (deviceType)
+		fprintf(stdout, "device type: %s\n", deviceType == RMI_DEVICE_TYPE_TOUCHSCREEN ?
+			"touchscreen" : "touchpad");
 }
 
 bool WriteDeviceNameToFile(const char * file, const char * str)
@@ -764,7 +808,7 @@ bool HIDDevice::WaitForHidRawDevice(int notifyFd, std::string & deviceName,
 	}
 }
 
-bool HIDDevice::FindDevice()
+bool HIDDevice::FindDevice(enum RMIDeviceType type)
 {
 	DIR * devDir;
 	struct dirent * devDirEntry;
@@ -780,7 +824,7 @@ bool HIDDevice::FindDevice()
 		if (strstr(devDirEntry->d_name, "hidraw")) {
 			snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
 			rc = Open(deviceFile);
-			if (rc != 0) {
+			if (rc != 0 || (type != RMI_DEVICE_TYPE_ANY && GetDeviceType() != type)) {
 				continue;
 			} else {
 				found = true;

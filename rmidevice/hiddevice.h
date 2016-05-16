@@ -48,7 +48,7 @@ public:
 
 	virtual void PrintDeviceInfo();
 
-	virtual bool FindDevice();
+	virtual bool FindDevice(enum RMIDeviceType type = RMI_DEVICE_TYPE_ANY);
 
 private:
 	int m_fd;
@@ -71,7 +71,7 @@ private:
 
 	int GetReport(int *reportId, struct timeval * timeout = NULL);
 	void PrintReport(const unsigned char *report);
-	void ParseReportSizes();
+	void ParseReportDescriptor();
 
 	// static HID utility functions
 	static bool LookupHidDeviceName(int bus, int vendorId, int productId, std::string &deviceName);

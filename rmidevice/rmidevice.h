@@ -27,10 +27,17 @@
 
 #define RMI_INTERUPT_SOURCES_ALL_MASK	0xFFFFFFFF
 
+enum RMIDeviceType {
+	RMI_DEVICE_TYPE_ANY             = 0,
+	RMI_DEVICE_TYPE_TOUCHPAD,
+	RMI_DEVICE_TYPE_TOUCHSCREEN,
+};
+
 class RMIDevice
 {
 public:
-	RMIDevice() : m_functionList(), m_sensorID(0), m_bCancel(false), m_bytesPerReadRequest(0), m_page(-1)
+	RMIDevice() : m_functionList(), m_sensorID(0), m_bCancel(false), m_bytesPerReadRequest(0), m_page(-1),
+		      m_deviceType(RMI_DEVICE_TYPE_ANY)
 	{}
 	virtual ~RMIDevice() {}
 	virtual int Open(const char * filename) = 0;
@@ -70,7 +77,8 @@ public:
 
 	unsigned int GetNumInterruptRegs() { return m_numInterruptRegs; }
 
-	virtual bool FindDevice() = 0;
+	virtual bool FindDevice(enum RMIDeviceType type = RMI_DEVICE_TYPE_ANY) = 0;
+	enum RMIDeviceType GetDeviceType() { return m_deviceType; }
 
 protected:
 	std::vector<RMIFunction> m_functionList;
@@ -105,7 +113,9 @@ protected:
 	int m_page;
 
 	unsigned int m_numInterruptRegs;
- };
+
+	enum RMIDeviceType m_deviceType;
+};
 
 /* Utility Functions */
 long long diff_time(struct timespec *start, struct timespec *end);
