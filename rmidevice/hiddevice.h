@@ -67,12 +67,6 @@ private:
 
 	bool m_deviceOpen;
 
-	enum mode_type {
-		HID_RMI4_MODE_MOUSE			= 0,
-		HID_RMI4_MODE_ATTN_REPORTS		= 1,
-		HID_RMI4_MODE_NO_PACKED_ATTN_REPORTS	= 2,
-	};
-
 	int GetReport(int *reportId, struct timeval * timeout = NULL);
 	void PrintReport(const unsigned char *report);
 	void ParseReportSizes();
