@@ -236,10 +236,6 @@ int main(int argc, char ** argv)
 	char * start;
 	char * end;
 	int i = 0;
-	struct dirent * devDirEntry;
-	DIR * devDir;
-	char deviceFile[PATH_MAX];
-	bool found = false;
 
 	memset(&sig_cleanup_action, 0, sizeof(struct sigaction));
 	sig_cleanup_action.sa_handler = cleanup;
@@ -322,25 +318,7 @@ int main(int argc, char ** argv)
 			return 1;
 		}
 	} else {
-		devDir = opendir("/dev");
-		if (!devDir)
-			return -1;
-
-		while ((devDirEntry = readdir(devDir)) != NULL) {
-			if (strstr(devDirEntry->d_name, "hidraw")) {
-				snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
-				rc = device->Open(deviceFile);
-				if (rc != 0) {
-					continue;
-				} else {
-					found = true;
-					break;
-				}
-			}
-		}
-		closedir(devDir);
-
-		if (!found)
+		if (!device->FindDevice())
 			return -1;
 	}
 

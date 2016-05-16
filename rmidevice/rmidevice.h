@@ -70,6 +70,8 @@ public:
 
 	unsigned int GetNumInterruptRegs() { return m_numInterruptRegs; }
 
+	virtual bool FindDevice() = 0;
+
 protected:
 	std::vector<RMIFunction> m_functionList;
 	unsigned char m_manufacturerID;

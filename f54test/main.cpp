@@ -48,10 +48,9 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "\t-n, --no_reset\tDo not reset after the report.\n");
 }
 
-int RunF54Test(const char * deviceFile, f54_report_types reportType, bool continuousMode, bool noReset)
+int RunF54Test(RMIDevice & rmidevice, f54_report_types reportType, bool continuousMode, bool noReset)
 {
 	int rc;
-	HIDDevice rmidevice;
 	Display * display;
 
 	if (continuousMode)
@@ -64,10 +63,6 @@ int RunF54Test(const char * deviceFile, f54_report_types reportType, bool contin
 	}
 
 	display->Clear();
-
-	rc = rmidevice.Open(deviceFile);
-	if (rc)
-		return rc;
 
 	F54Test f54Test(rmidevice, *display);
 
@@ -84,8 +79,6 @@ int RunF54Test(const char * deviceFile, f54_report_types reportType, bool contin
 
 	if (!noReset)
 		rmidevice.Reset();
-
-	rmidevice.Close();
 
 	delete display;
 
@@ -111,11 +104,10 @@ int main(int argc, char **argv)
 		{"no_reset", 0, NULL, 'n'},
 		{0, 0, 0, 0},
 	};
-	struct dirent * devDirEntry;
-	DIR * devDir;
 	f54_report_types reportType = F54_16BIT_IMAGE;
 	bool continuousMode = false;
 	bool noReset = false;
+	HIDDevice device;
 
 	while ((opt = getopt_long(argc, argv, F54TEST_GETOPTS, long_options, &index)) != -1) {
 		switch (opt) {
@@ -148,38 +140,16 @@ int main(int argc, char **argv)
 	}
 
 	if (deviceName) {
-		rc = RunF54Test(deviceName, reportType, continuousMode, noReset);
-		if (rc)
-			return rc;
-
-		return rc;
-	} else {
-		char rawDevice[PATH_MAX];
-		char deviceFile[PATH_MAX];
-		bool found = false;
-
-		devDir = opendir("/dev");
-		if (!devDir)
-			return -1;
-
-		while ((devDirEntry = readdir(devDir)) != NULL) {
-			if (strstr(devDirEntry->d_name, "hidraw")) {
-				strncpy(rawDevice, devDirEntry->d_name, PATH_MAX);
-				snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
-				rc = RunF54Test(deviceFile, reportType, continuousMode, noReset);
-				if (rc != 0) {
-					continue;
-				} else {
-					found = true;
-					break;
-				}
-			}
+		rc = device.Open(deviceName);
+		if (rc) {
+			fprintf(stderr, "%s: failed to initialize rmi device (%d): %s\n", argv[0], errno,
+				strerror(errno));
+			return 1;
 		}
-		closedir(devDir);
-
-		if (!found)
-			return rc;
+	} else {
+		if (!device.FindDevice())
+			return 1;
 	}
 
-	return 0;
+	return RunF54Test(device, reportType, continuousMode, noReset);
 }

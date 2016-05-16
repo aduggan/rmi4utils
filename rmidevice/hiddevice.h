@@ -48,6 +48,8 @@ public:
 
 	virtual void PrintDeviceInfo();
 
+	virtual bool FindDevice();
+
 private:
 	int m_fd;
 

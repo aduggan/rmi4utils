@@ -763,3 +763,32 @@ bool HIDDevice::WaitForHidRawDevice(int notifyFd, std::string & deviceName,
 		}
 	}
 }
+
+bool HIDDevice::FindDevice()
+{
+	DIR * devDir;
+	struct dirent * devDirEntry;
+	char deviceFile[PATH_MAX];
+	bool found;
+	int rc;
+
+	devDir = opendir("/dev");
+	if (!devDir)
+		return -1;
+
+	while ((devDirEntry = readdir(devDir)) != NULL) {
+		if (strstr(devDirEntry->d_name, "hidraw")) {
+			snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
+			rc = Open(deviceFile);
+			if (rc != 0) {
+				continue;
+			} else {
+				found = true;
+				break;
+			}
+		}
+	}
+	closedir(devDir);
+
+	return found;
+}
