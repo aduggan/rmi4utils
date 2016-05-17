@@ -824,7 +824,10 @@ bool HIDDevice::FindDevice(enum RMIDeviceType type)
 		if (strstr(devDirEntry->d_name, "hidraw")) {
 			snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
 			rc = Open(deviceFile);
-			if (rc != 0 || (type != RMI_DEVICE_TYPE_ANY && GetDeviceType() != type)) {
+			if (rc != 0) {
+				continue;
+			} else if (type != RMI_DEVICE_TYPE_ANY && GetDeviceType() != type) {
+				Close();
 				continue;
 			} else {
 				found = true;
