@@ -85,20 +85,21 @@ int HIDDevice::Open(const char * filename)
 
 	rc = ioctl(m_fd, HIDIOCGRDESCSIZE, &desc_size);
 	if (rc < 0)
-		return rc;
+		goto error;
 	
 	m_rptDesc.size = desc_size;
 	rc = ioctl(m_fd, HIDIOCGRDESC, &m_rptDesc);
 	if (rc < 0)
-		return rc;
+		goto error;
 	
 	rc = ioctl(m_fd, HIDIOCGRAWINFO, &m_info);
 	if (rc < 0)
-		return rc;
+		goto error;
 
 	if (m_info.vendor != SYNAPTICS_VENDOR_ID) {
 		errno = -ENODEV;
-		return -1;
+		rc = -1;
+		goto error;
 	}
 
 	ParseReportDescriptor();
@@ -106,34 +107,44 @@ int HIDDevice::Open(const char * filename)
 	m_inputReport = new unsigned char[m_inputReportSize]();
 	if (!m_inputReport) {
 		errno = -ENOMEM;
-		return -1;
+		rc = -1;
+		goto error;
 	}
 
 	m_outputReport = new unsigned char[m_outputReportSize]();
 	if (!m_outputReport) {
 		errno = -ENOMEM;
-		return -1;
+		rc = -1;
+		goto error;
 	}
 
 	m_readData = new unsigned char[m_inputReportSize]();
 	if (!m_readData) {
 		errno = -ENOMEM;
-		return -1;
+		rc = -1;
+		goto error;
 	}
 
 	m_attnData = new unsigned char[m_inputReportSize]();
 	if (!m_attnData) {
 		errno = -ENOMEM;
-		return -1;
+		rc = -1;
+		goto error;
 	}
 
 	m_deviceOpen = true;
 
 	rc = SetMode(HID_RMI4_MODE_ATTN_REPORTS);
-	if (rc)
-		return -1;
+	if (rc) {
+		rc = -1;
+		goto error;
+	}
 
 	return 0;
+
+error:
+	Close();
+	return rc;
 }
 
 void HIDDevice::ParseReportDescriptor()
