@@ -51,7 +51,7 @@ public:
 	virtual int GetAttentionReport(struct timeval * timeout, unsigned int source_mask,
 					unsigned char *buf, unsigned int *len)
 	{ return -1; /* Unsupported */ }
-	virtual void Close() = 0;
+	virtual void Close();
 	virtual void Cancel() { m_bCancel = true; }
 	virtual void RebindDriver() = 0;
 

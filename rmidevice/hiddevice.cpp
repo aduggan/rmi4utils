@@ -385,6 +385,8 @@ int HIDDevice::SetMode(int mode)
 
 void HIDDevice::Close()
 {
+	RMIDevice::Close();
+
 	if (!m_deviceOpen)
 		return;
 

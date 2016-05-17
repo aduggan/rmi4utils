@@ -206,6 +206,15 @@ int RMIDevice::QueryBasicProperties()
 	return 0;
 }
 
+void RMIDevice::Close()
+{
+	m_functionList.clear();
+	m_bCancel = false;
+	m_bytesPerReadRequest = 0;
+	m_page = -1;
+	m_deviceType = RMI_DEVICE_TYPE_ANY;
+}
+
 void RMIDevice::PrintProperties()
 {
 	fprintf(stdout, "manufacturerID:\t\t%d\n", m_manufacturerID);
