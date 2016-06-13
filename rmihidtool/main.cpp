@@ -58,11 +58,11 @@ void print_help(const char *prog_name)
 {
 	fprintf(stdout, "Usage: %s [OPTIONS] DEVICEFILE\n", prog_name);
 	fprintf(stdout, "\t-h, --help\t\t\t\tPrint this message\n");
-	fprintf(stdout, "\t-d, --device\t\t\thidraw device file associated with the device.\n");
+	fprintf(stdout, "\t-d, --device\t\t\t\thidraw device file associated with the device.\n");
 	fprintf(stdout, "\t-p, --protocol [protocol]\t\tSet which transport prototocl to use.\n");
 	fprintf(stdout, "\t-i, --interactive\t\t\tRun in interactive mode.\n");
 	fprintf(stdout, "\t-r, --read [address] [length]\t\tRead registers starting at the address.\n");
-	fprintf(stdout, "\t-r, --write [address] [length] [data]\tWrite registers starting at the address.\n");
+	fprintf(stdout, "\t-w, --write [address] [length] [data]\tWrite registers starting at the address.\n");
 	fprintf(stdout, "\t-f, --firmware-id\t\t\tPrint the firmware id\n");
 	fprintf(stdout, "\t-c, --config-id\t\t\t\tPrint the config id\n");
 	fprintf(stdout, "\t-o, --props\t\t\t\tPrint device properties\n");
