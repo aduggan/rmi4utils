@@ -401,7 +401,6 @@ void HIDDevice::Close()
 	if (!m_deviceOpen)
 		return;
 
-	SetMode(HID_RMI4_MODE_MOUSE);
 	m_deviceOpen = false;
 	close(m_fd);
 	m_fd = -1;
