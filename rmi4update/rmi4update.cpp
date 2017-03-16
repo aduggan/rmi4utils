@@ -157,6 +157,12 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 			fprintf(stdout, "Writing config done V7...\n");
 			goto reset;
 		}
+	} else {
+		rc = EnterFlashProgramming();
+		if (rc != UPDATE_SUCCESS) {
+			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+			goto reset;
+		}
 	}
 
 	if (performLockdown && m_unlocked) {
