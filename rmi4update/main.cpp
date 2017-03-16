@@ -174,6 +174,8 @@ int main(int argc, char **argv)
 				strerror(errno));
 			return 1;
 		}
+		//device.SetTransportDevice(deviceName);
+		//device.g_transportDeviceName = deviceName;	// leon
 	} else {
 		if (!device.FindDevice())
 			return 1;
