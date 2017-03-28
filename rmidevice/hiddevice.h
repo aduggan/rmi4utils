@@ -22,6 +22,12 @@
 #include <string>
 #include "rmidevice.h"
 
+enum rmi_hid_mode_type {
+	HID_RMI4_MODE_MOUSE                     = 0,
+	HID_RMI4_MODE_ATTN_REPORTS              = 1,
+	HID_RMI4_MODE_NO_PACKED_ATTN_REPORTS    = 2,
+};
+
 class HIDDevice : public RMIDevice
 {
 public:
@@ -30,7 +36,9 @@ public:
 		      m_inputReportSize(0),
 		      m_outputReportSize(0),
 		      m_featureReportSize(0),
-		      m_deviceOpen(false)
+		      m_deviceOpen(false),
+		      m_mode(HID_RMI4_MODE_ATTN_REPORTS),
+		      m_initialMode(HID_RMI4_MODE_MOUSE)
 	{}
 	virtual int Open(const char * filename);
 	virtual int Read(unsigned short addr, unsigned char *buf,
@@ -69,12 +77,16 @@ private:
 
 	bool m_deviceOpen;
 
+	rmi_hid_mode_type m_mode;
+	rmi_hid_mode_type m_initialMode;
+
 	int GetReport(int *reportId, struct timeval * timeout = NULL);
 	void PrintReport(const unsigned char *report);
 	void ParseReportDescriptor();
 
 	// static HID utility functions
 	static bool LookupHidDeviceName(int bus, int vendorId, int productId, std::string &deviceName);
+	static bool LookupHidDriverName(std::string &deviceName, std::string &driverName);
 	static bool FindTransportDevice(int bus, std::string & hidDeviceName,
 					std::string & transportDeviceName, std::string & driverPath);
 	static bool WaitForHidRawDevice(int notifyFd, std::string & deviceName, std::string & hidraw);

@@ -41,12 +41,6 @@
 #define RMI_ATTN_REPORT_ID                  0xc // Input Report
 #define RMI_SET_RMI_MODE_REPORT_ID          0xf // Feature Report
 
-enum rmi_hid_mode_type {
-	HID_RMI4_MODE_MOUSE                     = 0,
-	HID_RMI4_MODE_ATTN_REPORTS              = 1,
-	HID_RMI4_MODE_NO_PACKED_ATTN_REPORTS    = 2,
-};
-
 enum hid_report_type {
 	HID_REPORT_TYPE_UNKNOWN			= 0x0,
 	HID_REPORT_TYPE_INPUT			= 0x81,
@@ -72,6 +66,8 @@ int HIDDevice::Open(const char * filename)
 {
 	int rc;
 	int desc_size;
+	std::string hidDeviceName;
+	std::string hidDriverName;
 
 	if (!filename)
 		return -EINVAL;
@@ -134,10 +130,21 @@ int HIDDevice::Open(const char * filename)
 
 	m_deviceOpen = true;
 
-	rc = SetMode(HID_RMI4_MODE_ATTN_REPORTS);
-	if (rc) {
-		rc = -1;
-		goto error;
+	// Determine which mode the device is currently running in based on the current HID driver
+	// hid-rmi indicated RMI Mode 1 all others would be Mode 0
+	if (LookupHidDeviceName(m_info.bustype, m_info.vendor, m_info.product, hidDeviceName)) {
+		if (LookupHidDriverName(hidDeviceName, hidDriverName)) {
+			if (hidDriverName == "hid-rmi")
+				m_initialMode = HID_RMI4_MODE_ATTN_REPORTS;
+		}
+	}
+
+	if (m_initialMode != m_mode) {
+		rc = SetMode(m_mode);
+		if (rc) {
+			rc = -1;
+			goto error;
+		}
 	}
 
 	return 0;
@@ -400,6 +407,9 @@ void HIDDevice::Close()
 
 	if (!m_deviceOpen)
 		return;
+
+	if (m_initialMode != m_mode)
+		SetMode(m_initialMode);
 
 	m_deviceOpen = false;
 	close(m_fd);
@@ -760,6 +770,24 @@ bool HIDDevice::LookupHidDeviceName(int bus, int vendorId, int productId, std::s
 	closedir(devDir);
 
 	return ret;
+}
+
+bool HIDDevice::LookupHidDriverName(std::string &deviceName, std::string &driverName)
+{
+	bool ret = false;
+	ssize_t sz;
+	char link[PATH_MAX];
+	std::string driverLink = "/sys/bus/hid/devices/" + deviceName + "/driver";
+
+	sz = readlink(driverLink.c_str(), link, PATH_MAX);
+	if (sz == -1)
+		return ret;
+
+	link[sz] = 0;
+
+	driverName = std::string(StripPath(link, PATH_MAX));
+
+	return true;
 }
 
 bool HIDDevice::WaitForHidRawDevice(int notifyFd, std::string & deviceName,
