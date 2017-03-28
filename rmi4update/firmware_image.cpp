@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "rmidevice.h"
 #include "firmware_image.h"
 
 using namespace std;
