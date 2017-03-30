@@ -853,7 +853,7 @@ bool HIDDevice::FindDevice(enum RMIDeviceType type)
 	DIR * devDir;
 	struct dirent * devDirEntry;
 	char deviceFile[PATH_MAX];
-	bool found;
+	bool found = false;
 	int rc;
 
 	devDir = opendir("/dev");
