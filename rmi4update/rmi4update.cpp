@@ -916,14 +916,16 @@ int RMI4Update::EnterFlashProgrammingV7()
 	rmi4update_poll();
 	if (!m_inBLmode)
 		return UPDATE_FAIL_DEVICE_NOT_IN_BOOTLOADER;
-/////////////////////////////////////////////////////////////////////////////
-        // workaround
-        //rc = EraseFirmwareV7();
-        //if (rc != UPDATE_SUCCESS) {
-        //        fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-        //        return UPDATE_FAIL_ERASE_ALL;
-        //}
-/////////////////////////////////////////////////////////////////////////////
+
+	// workaround
+	fprintf(stdout, "Erase in BL mode\n");
+	rc = EraseFirmwareV7();
+	if (rc != UPDATE_SUCCESS) {
+		fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+		return UPDATE_FAIL_ERASE_ALL;
+	}
+	fprintf(stdout, "Erase in BL mode end\n");
+
 	m_device.RebindDriver();
 	Sleep(RMI_F34_ENABLE_WAIT_MS);
 
