@@ -20,6 +20,7 @@
 
 #include <linux/hidraw.h>
 #include <string>
+#include <stdint.h>
 #include "rmidevice.h"
 
 enum rmi_hid_mode_type {
@@ -85,9 +86,9 @@ private:
 	void ParseReportDescriptor();
 
 	// static HID utility functions
-	static bool LookupHidDeviceName(int bus, int vendorId, int productId, std::string &deviceName);
+	static bool LookupHidDeviceName(uint32_t bus, int16_t vendorId, int16_t productId, std::string &deviceName);
 	static bool LookupHidDriverName(std::string &deviceName, std::string &driverName);
-	static bool FindTransportDevice(int bus, std::string & hidDeviceName,
+	static bool FindTransportDevice(uint32_t bus, std::string & hidDeviceName,
 					std::string & transportDeviceName, std::string & driverPath);
 	static bool WaitForHidRawDevice(int notifyFd, std::string & deviceName, std::string & hidraw);
  };

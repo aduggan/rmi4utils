@@ -686,7 +686,7 @@ void HIDDevice::RebindDriver()
 	}
 }
 
-bool HIDDevice::FindTransportDevice(int bus, std::string & hidDeviceName,
+bool HIDDevice::FindTransportDevice(uint32_t bus, std::string & hidDeviceName,
 			std::string & transportDeviceName, std::string & driverPath)
 {
 	std::string devicePrefix = "/sys/bus/";
@@ -747,14 +747,14 @@ bool HIDDevice::FindTransportDevice(int bus, std::string & hidDeviceName,
 	return deviceFound;
 }
 
-bool HIDDevice::LookupHidDeviceName(int bus, int vendorId, int productId, std::string & deviceName)
+bool HIDDevice::LookupHidDeviceName(uint32_t bus, int16_t vendorId, int16_t productId, std::string & deviceName)
 {
 	bool ret = false;
 	struct dirent * devDirEntry;
 	DIR * devDir;
 	char devicePrefix[15];
 
-	snprintf(devicePrefix, 15, "%04X:%04X:%04X", bus, vendorId, productId);
+	snprintf(devicePrefix, 15, "%04X:%04X:%04X", bus, (vendorId & 0xFFFF), (productId & 0xFFFF));
 
 	devDir = opendir("/sys/bus/hid/devices");
 	if (!devDir)
