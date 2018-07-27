@@ -35,7 +35,7 @@
 #define VERSION_MINOR		2
 #define VERSION_SUBMINOR	10
 
-#define RMI4UPDATE_GETOPTS	"hfd:pclv"
+#define RMI4UPDATE_GETOPTS	"hfdt:pclv"
 
 void printHelp(const char *prog_name)
 {
@@ -47,6 +47,7 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "\t-c, --config-id\tPrint the config id.\n");
 	fprintf(stdout, "\t-l, --lockdown\tPerform lockdown.\n");
 	fprintf(stdout, "\t-v, --version\tPrint version number.\n");
+	fprintf(stdout, "\t-t, --device-type\t\t\tFilter by device type [touchpad or touchscreen].\n");
 }
 
 void printVersion()
@@ -101,12 +102,14 @@ int main(int argc, char **argv)
 		{"config-id", 0, NULL, 'c'},
 		{"lockdown", 0, NULL, 'l'},
 		{"version", 0, NULL, 'v'},
+		{"device-type", 1, NULL, 't'},
 		{0, 0, 0, 0},
 	};
 	bool printFirmwareProps = false;
 	bool printConfigid = false;
 	bool performLockdown = false;
 	HIDDevice device;
+	enum RMIDeviceType deviceType = RMI_DEVICE_TYPE_ANY;
 
 	while ((opt = getopt_long(argc, argv, RMI4UPDATE_GETOPTS, long_options, &index)) != -1) {
 		switch (opt) {
@@ -128,6 +131,12 @@ int main(int argc, char **argv)
 				break;
 			case 'l':
 				performLockdown = true;
+				break;
+			case 't':
+				if (!strcasecmp((const char *)optarg, "touchpad"))
+					deviceType = RMI_DEVICE_TYPE_TOUCHPAD;
+				else if (!strcasecmp((const char *)optarg, "touchscreen"))
+					deviceType = RMI_DEVICE_TYPE_TOUCHSCREEN;
 				break;
 			case 'v':
 				printVersion();
@@ -174,10 +183,8 @@ int main(int argc, char **argv)
 				strerror(errno));
 			return 1;
 		}
-		//device.SetTransportDevice(deviceName);
-		//device.g_transportDeviceName = deviceName;	// leon
 	} else {
-		if (!device.FindDevice())
+		if (!device.FindDevice(deviceType))
 			return 1;
 	}
 
