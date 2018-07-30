@@ -192,5 +192,11 @@ int main(int argc, char **argv)
 	RMI4Update update(device, image);
 	rc = update.UpdateFirmware(force, performLockdown);
 
-	return rc == UPDATE_SUCCESS ? 0 : 1;
+	if (rc != UPDATE_SUCCESS)
+	{
+		device.Reset();
+		return 1;
+	}
+
+	return 0;
 }
