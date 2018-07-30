@@ -39,7 +39,9 @@ public:
 		      m_featureReportSize(0),
 		      m_deviceOpen(false),
 		      m_mode(HID_RMI4_MODE_ATTN_REPORTS),
-		      m_initialMode(HID_RMI4_MODE_MOUSE)
+		      m_initialMode(HID_RMI4_MODE_MOUSE),
+		      m_transportDeviceName(""),
+		      m_driverPath("")
 	{}
 	virtual int Open(const char * filename);
 	virtual int Read(unsigned short addr, unsigned char *buf,
@@ -81,16 +83,20 @@ private:
 	rmi_hid_mode_type m_mode;
 	rmi_hid_mode_type m_initialMode;
 
+	std::string m_transportDeviceName;
+	std::string m_driverPath;
+
 	int GetReport(int *reportId, struct timeval * timeout = NULL);
 	void PrintReport(const unsigned char *report);
 	void ParseReportDescriptor();
+
+	bool WaitForHidRawDevice(int notifyFd, std::string & hidraw);
 
 	// static HID utility functions
 	static bool LookupHidDeviceName(uint32_t bus, int16_t vendorId, int16_t productId, std::string &deviceName);
 	static bool LookupHidDriverName(std::string &deviceName, std::string &driverName);
 	static bool FindTransportDevice(uint32_t bus, std::string & hidDeviceName,
 					std::string & transportDeviceName, std::string & driverPath);
-	static bool WaitForHidRawDevice(int notifyFd, std::string & deviceName, std::string & hidraw);
  };
 
 #endif /* _HIDDEVICE_H_ */

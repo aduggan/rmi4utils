@@ -629,8 +629,6 @@ void HIDDevice::RebindDriver()
 	int vendor = m_info.vendor;
 	int product = m_info.product;
 	std::string hidDeviceName;
-	std::string transportDeviceName;
-	std::string driverPath;
 	std::string bindFile;
 	std::string unbindFile;
 	std::string hidrawFile;
@@ -652,33 +650,36 @@ void HIDDevice::RebindDriver()
 		return;
 	}
 
-	if (!LookupHidDeviceName(bus, vendor, product, hidDeviceName)) {
-		fprintf(stderr, "Failed to find HID device name for the specified device: bus (0x%x) vendor: (0x%x) product: (0x%x)\n",
-			bus, vendor, product);
-		return;
+	if (m_transportDeviceName == "") {
+		if (!LookupHidDeviceName(bus, vendor, product, hidDeviceName)) {
+			fprintf(stderr, "Failed to find HID device name for the specified device: bus (0x%x) vendor: (0x%x) product: (0x%x)\n",
+				bus, vendor, product);
+			return;
+		}
+
+		if (!FindTransportDevice(bus, hidDeviceName, m_transportDeviceName, m_driverPath)) {
+			fprintf(stderr, "Failed to find the transport device / driver for %s\n", hidDeviceName.c_str());
+			return;
+		}
+
 	}
 
-	if (!FindTransportDevice(bus, hidDeviceName, transportDeviceName, driverPath)) {
-		fprintf(stderr, "Failed to find the transport device / driver for %s\n", hidDeviceName.c_str());
-		return;
-	}
+	bindFile = m_driverPath + "bind";
+	unbindFile = m_driverPath + "unbind";
 
-	bindFile = driverPath + "bind";
-	unbindFile = driverPath + "unbind";
-
-	if (!WriteDeviceNameToFile(unbindFile.c_str(), transportDeviceName.c_str())) {
+	if (!WriteDeviceNameToFile(unbindFile.c_str(), m_transportDeviceName.c_str())) {
 		fprintf(stderr, "Failed to unbind HID device %s: %s\n",
-			transportDeviceName.c_str(), strerror(errno));
+			m_transportDeviceName.c_str(), strerror(errno));
 		return;
 	}
 
-	if (!WriteDeviceNameToFile(bindFile.c_str(), transportDeviceName.c_str())) {
+	if (!WriteDeviceNameToFile(bindFile.c_str(), m_transportDeviceName.c_str())) {
 		fprintf(stderr, "Failed to bind HID device %s: %s\n",
-			transportDeviceName.c_str(), strerror(errno));
+			m_transportDeviceName.c_str(), strerror(errno));
 		return;
 	}
 
-	if (WaitForHidRawDevice(notifyFd, hidDeviceName, hidrawFile)) {
+	if (WaitForHidRawDevice(notifyFd, hidrawFile)) {
 		rc = Open(hidrawFile.c_str());
 		if (rc)
 			fprintf(stderr, "Failed to open device (%s) during rebind: %d: errno: %s (%d)\n",
@@ -790,14 +791,19 @@ bool HIDDevice::LookupHidDriverName(std::string &deviceName, std::string &driver
 	return true;
 }
 
-bool HIDDevice::WaitForHidRawDevice(int notifyFd, std::string & deviceName,
-									std::string & hidrawFile)
+bool HIDDevice::WaitForHidRawDevice(int notifyFd, std::string & hidrawFile)
 {
 	struct timeval timeout;
 	fd_set fds;
 	int rc;
+	ssize_t eventBytesRead;
+	int eventBytesAvailable;
 	size_t sz;
 	char link[PATH_MAX];
+	std::string transportDeviceName;
+	std::string driverPath;
+	std::string hidDeviceName;
+	int offset = 0;
 
 	for (;;) {
 		FD_ZERO(&fds);
@@ -820,29 +826,42 @@ bool HIDDevice::WaitForHidRawDevice(int notifyFd, std::string & deviceName,
 
 		if (FD_ISSET(notifyFd, &fds)) {
 			struct inotify_event * event;
-			const int buf_len = sizeof(struct inotify_event) + NAME_MAX + 1;
-			char buf[buf_len];
 
-			rc = read(notifyFd, buf, buf_len);
+			rc = ioctl(notifyFd, FIONREAD, &eventBytesAvailable);
 			if (rc < 0) {
 				continue;
 			}
 
-			event = (struct inotify_event *)buf;
+			char buf[eventBytesAvailable];
 
-			if (!strncmp(event->name, "hidraw", 6)) {
-				std::string classPath = std::string("/sys/class/hidraw/")
-											+ event->name + "/device";
-				sz = readlink(classPath.c_str(), link, PATH_MAX);
-				link[sz] = 0;
+			eventBytesRead = read(notifyFd, buf, eventBytesAvailable);
+			if (eventBytesRead < 0) {
+				continue;
+			}
 
-				// The buffer looks something like ../../../0018:06CB:76AD.0014
-				// Add 9 to strip off ../../../ and ignore the id on the end which
-				// changes per instance.
-				if (!strncmp(deviceName.c_str(), link + 9, 14)) {
-					hidrawFile = std::string("/dev/") + event->name;
-					return true;
+			while (offset < eventBytesRead) {
+				event = (struct inotify_event *)&buf[offset];
+
+				if (!strncmp(event->name, "hidraw", 6)) {
+					std::string classPath = std::string("/sys/class/hidraw/")
+												+ event->name + "/device";
+					sz = readlink(classPath.c_str(), link, PATH_MAX);
+					link[sz] = 0;
+
+					hidDeviceName = std::string(link).substr(9, 19);
+
+					if (!FindTransportDevice(m_info.bustype, hidDeviceName, transportDeviceName, driverPath)) {
+						fprintf(stderr, "Failed to find the transport device / driver for %s\n", hidDeviceName.c_str());
+						continue;
+					}
+
+					if (transportDeviceName == m_transportDeviceName) {
+						hidrawFile = std::string("/dev/") + event->name;
+						return true;
+					}
 				}
+
+				offset += sizeof(struct inotify_event) + event->len;
 			}
 		}
 	}
