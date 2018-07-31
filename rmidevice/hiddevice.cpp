@@ -673,6 +673,8 @@ void HIDDevice::RebindDriver()
 		return;
 	}
 
+	Sleep(1500);
+
 	if (!WriteDeviceNameToFile(bindFile.c_str(), m_transportDeviceName.c_str())) {
 		fprintf(stderr, "Failed to bind HID device %s: %s\n",
 			m_transportDeviceName.c_str(), strerror(errno));
