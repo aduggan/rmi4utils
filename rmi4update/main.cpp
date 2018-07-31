@@ -35,7 +35,7 @@
 #define VERSION_MINOR		2
 #define VERSION_SUBMINOR	10
 
-#define RMI4UPDATE_GETOPTS	"hfdt:pclv"
+#define RMI4UPDATE_GETOPTS	"hfd:t:pclv"
 
 void printHelp(const char *prog_name)
 {
