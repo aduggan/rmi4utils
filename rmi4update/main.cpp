@@ -40,14 +40,14 @@
 void printHelp(const char *prog_name)
 {
 	fprintf(stdout, "Usage: %s [OPTIONS] FIRMWAREFILE\n", prog_name);
-	fprintf(stdout, "\t-h, --help\tPrint this message\n");
-	fprintf(stdout, "\t-f, --force\tForce updating firmware even it the image provided is older\n\t\t\tthen the current firmware on the device.\n");
-	fprintf(stdout, "\t-d, --device\thidraw device file associated with the device being updated.\n");
-	fprintf(stdout, "\t-p, --fw-props\tPrint the firmware properties.\n");
-	fprintf(stdout, "\t-c, --config-id\tPrint the config id.\n");
-	fprintf(stdout, "\t-l, --lockdown\tPerform lockdown.\n");
-	fprintf(stdout, "\t-v, --version\tPrint version number.\n");
-	fprintf(stdout, "\t-t, --device-type\t\t\tFilter by device type [touchpad or touchscreen].\n");
+	fprintf(stdout, "\t-h, --help\t\tPrint this message\n");
+	fprintf(stdout, "\t-f, --force\t\tForce updating firmware even it the image provided is older\n\t\t\t\tthen the current firmware on the device.\n");
+	fprintf(stdout, "\t-d, --device\t\thidraw device file associated with the device being updated.\n");
+	fprintf(stdout, "\t-p, --fw-props\t\tPrint the firmware properties.\n");
+	fprintf(stdout, "\t-c, --config-id\t\tPrint the config id.\n");
+	fprintf(stdout, "\t-l, --lockdown\t\tPerform lockdown.\n");
+	fprintf(stdout, "\t-v, --version\t\tPrint version number.\n");
+	fprintf(stdout, "\t-t, --device-type\tFilter by device type [touchpad or touchscreen].\n");
 }
 
 void printVersion()
