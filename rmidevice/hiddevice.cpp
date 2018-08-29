@@ -809,7 +809,7 @@ bool HIDDevice::WaitForHidRawDevice(int notifyFd, std::string & hidrawFile)
 		FD_ZERO(&fds);
 		FD_SET(notifyFd, &fds);
 
-		timeout.tv_sec = 1;
+		timeout.tv_sec = 20;
 		timeout.tv_usec = 0;
 
 		rc = select(notifyFd + 1, &fds, NULL, NULL, &timeout);
