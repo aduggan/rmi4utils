@@ -60,6 +60,7 @@ public:
 	virtual void PrintDeviceInfo();
 
 	virtual bool FindDevice(enum RMIDeviceType type = RMI_DEVICE_TYPE_ANY);
+	virtual bool CheckABSEvent();
 
 private:
 	int m_fd;

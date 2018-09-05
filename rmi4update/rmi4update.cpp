@@ -23,7 +23,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-
+#include <fcntl.h>
+#include <linux/input.h>
 #include "rmi4update.h"
 
 #define RMI_F34_QUERY_SIZE		7
@@ -242,7 +243,12 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 
 reset:
 	m_device.Reset();
+rebind:
 	m_device.RebindDriver();
+	if(!m_device.CheckABSEvent())
+	{
+		goto rebind;
+	}
 	return rc;
 
 }

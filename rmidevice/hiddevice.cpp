@@ -622,7 +622,89 @@ bool WriteDeviceNameToFile(const char * file, const char * str)
 
 	return close(fd) == 0 && size == static_cast<ssize_t>(strlen(str));
 }
+static const char * const absval[6] = { "Value", "Min  ", "Max  ", "Fuzz ", "Flat ", "Resolution "};
+#define KEY_MAX			0x2ff
+#define EV_MAX			0x1f
+#define BITS_PER_LONG (sizeof(long) * 8)
+#define NBITS(x) ((((x)-1)/BITS_PER_LONG)+1)
+#define OFF(x)  ((x)%BITS_PER_LONG)
+#define BIT(x)  (1UL<<OFF(x))
+#define LONG(x) ((x)/BITS_PER_LONG)
+#define test_bit(bit, array)	((array[LONG(bit)] >> OFF(bit)) & 1)
+#define DEV_INPUT_EVENT "/dev/input"
+#define EVENT_DEV_NAME "event"
+/**
+ * Filter for the AutoDevProbe scandir on /dev/input.
+ *
+ * @param dir The current directory entry provided by scandir.
+ *
+ * @return Non-zero if the given directory entry starts with "event", or zero
+ * otherwise.
+ */
+static int is_event_device(const struct dirent *dir) {
+	return strncmp(EVENT_DEV_NAME, dir->d_name, 5) == 0;
+}
 
+bool HIDDevice::CheckABSEvent()
+{
+	int fd=-1;
+	unsigned int type;
+	int abs[6] = {0};
+	int k;
+	struct dirent **namelist;
+	int i, ndev, devnum, match;
+	char *filename;
+	int max_device = 0;
+    char input_event_name[PATH_MAX];
+	unsigned long bit[EV_MAX][NBITS(KEY_MAX)];
+
+
+	ndev = scandir(DEV_INPUT_EVENT, &namelist, is_event_device, versionsort);
+	if (ndev <= 0)
+		return false;
+	for (i = 0; i < ndev; i++)
+	{
+		char fname[64];
+		int fd = -1;
+		char name[256] = "???";
+
+		snprintf(fname, sizeof(fname),
+			 "%s/%s", DEV_INPUT_EVENT, namelist[i]->d_name);
+		fd = open(fname, O_RDONLY);
+		if (fd < 0)
+			continue;
+		ioctl(fd, EVIOCGNAME(sizeof(name)), name);
+		//fprintf(stderr, "%s:	%s\n", fname, name);
+		close(fd);
+
+		if(strstr(name, m_transportDeviceName.c_str()+4))
+		{
+			snprintf(input_event_name, sizeof(fname), "%s", fname);
+		}
+		free(namelist[i]);
+	}
+	
+	if ((fd = open(input_event_name, O_RDONLY)) < 0) {
+		if (errno == EACCES && getuid() != 0)
+			fprintf(stderr, "No access right \n");
+	}
+	memset(bit, 0, sizeof(bit));
+	ioctl(fd, EVIOCGBIT(0, EV_MAX), bit[0]);
+	for (type = 0; type < EV_MAX; type++) {
+		if (test_bit(type, bit[0]) && type == EV_ABS) {
+			ioctl(fd, EVIOCGBIT(type, KEY_MAX), bit[type]);
+			if (test_bit(ABS_X, bit[type])) {
+				ioctl(fd, EVIOCGABS(ABS_X), abs);
+				if(abs[2] == 0) //maximum
+				{
+					Sleep(1000);
+					return false;
+				}
+			}
+		}
+	}
+	return true;
+}
 void HIDDevice::RebindDriver()
 {
 	int bus = m_info.bustype;
@@ -635,7 +717,6 @@ void HIDDevice::RebindDriver()
 	int notifyFd;
 	int wd;
 	int rc;
-
 	Close();
 
 	notifyFd = inotify_init();
@@ -663,16 +744,16 @@ void HIDDevice::RebindDriver()
 		}
 
 	}
-
+    
 	bindFile = m_driverPath + "bind";
 	unbindFile = m_driverPath + "unbind";
-
+	Sleep(500);
 	if (!WriteDeviceNameToFile(unbindFile.c_str(), m_transportDeviceName.c_str())) {
 		fprintf(stderr, "Failed to unbind HID device %s: %s\n",
 			m_transportDeviceName.c_str(), strerror(errno));
 		return;
 	}
-
+	Sleep(500);
 	if (!WriteDeviceNameToFile(bindFile.c_str(), m_transportDeviceName.c_str())) {
 		fprintf(stderr, "Failed to bind HID device %s: %s\n",
 			m_transportDeviceName.c_str(), strerror(errno));
