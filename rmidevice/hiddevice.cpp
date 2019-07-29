@@ -297,6 +297,8 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 	else
 		bytesPerRequest = len;
 
+	fprintf(stdout, "HIDDevice::Read  R %x : ", addr);
+
 	for (totalBytesRead = 0; totalBytesRead < len; totalBytesRead += bytesReadPerRequest) {
 		count = 0;
 		if ((len - totalBytesRead) < bytesPerRequest)
@@ -335,12 +337,14 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 			if (rc > 0 && reportId == RMI_READ_DATA_REPORT_ID) {
 				if (static_cast<ssize_t>(m_inputReportSize) <
 				    std::max(HID_RMI4_READ_INPUT_COUNT,
-					     HID_RMI4_READ_INPUT_DATA))
+					     HID_RMI4_READ_INPUT_DATA)){
 					return -1;
+				}
 				bytesInDataReport = m_readData[HID_RMI4_READ_INPUT_COUNT];
 				if (bytesInDataReport > bytesToRequest
-				    || bytesReadPerRequest + bytesInDataReport > len)
+				    || bytesReadPerRequest + bytesInDataReport > len){
 					return -1;
+				}
 				memcpy(buf + bytesReadPerRequest, &m_readData[HID_RMI4_READ_INPUT_DATA],
 					bytesInDataReport);
 				bytesReadPerRequest += bytesInDataReport;
@@ -349,6 +353,12 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 		}
 		addr += bytesPerRequest;
 	}
+
+	
+	for(int i =0 ; i<len ; i++){
+		fprintf(stdout, "%x ", buf[i]);
+	}
+	fprintf(stdout, "\n");
 
 	return totalBytesRead;
 }
@@ -368,7 +378,11 @@ int HIDDevice::Write(unsigned short addr, const unsigned char *buf, unsigned sho
 	m_outputReport[HID_RMI4_WRITE_OUTPUT_ADDR] = addr & 0xFF;
 	m_outputReport[HID_RMI4_WRITE_OUTPUT_ADDR + 1] = (addr >> 8) & 0xFF;
 	memcpy(&m_outputReport[HID_RMI4_WRITE_OUTPUT_DATA], buf, len);
-
+	fprintf(stdout, "HIDDevice::Write  W %x : ", addr);
+	for(int i =0 ; i<len ; i++){
+		fprintf(stdout, "%x ", buf[i]);
+	}
+	fprintf(stdout, "\n");
 	for (;;) {
 		m_bCancel = false;
 		count = write(m_fd, m_outputReport, m_outputReportSize);
@@ -955,7 +969,6 @@ bool HIDDevice::FindDevice(enum RMIDeviceType type)
 	char deviceFile[PATH_MAX];
 	bool found = false;
 	int rc;
-
 	devDir = opendir("/dev");
 	if (!devDir)
 		return -1;
@@ -963,6 +976,7 @@ bool HIDDevice::FindDevice(enum RMIDeviceType type)
 	while ((devDirEntry = readdir(devDir)) != NULL) {
 		if (strstr(devDirEntry->d_name, "hidraw")) {
 			snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
+			fprintf(stdout, "Got device : /dev/%s\n", devDirEntry->d_name);
 			rc = Open(deviceFile);
 			if (rc != 0) {
 				continue;
@@ -976,6 +990,6 @@ bool HIDDevice::FindDevice(enum RMIDeviceType type)
 		}
 	}
 	closedir(devDir);
-
+	
 	return found;
 }

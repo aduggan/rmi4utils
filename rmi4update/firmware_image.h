@@ -101,9 +101,11 @@ public:
 					unsigned long deviceConfigSize);
 	unsigned char * GetFirmwareData() { return m_firmwareData; }
 	unsigned char * GetConfigData() { return m_configData; }
+	unsigned char * GetFlashConfigData() { return m_flashConfigData; }
 	unsigned char * GetLockdownData() { return m_lockdownData; }
 	unsigned long GetFirmwareSize() { return m_firmwareSize; }
 	unsigned long GetConfigSize() { return m_configSize; }
+	unsigned long GetFlashConfigSize() { return m_flashConfigSize; }
 	unsigned long GetLockdownSize() { return m_lockdownSize; }
 	unsigned long GetFirmwareID() { return m_firmwareBuildID; }
 	bool HasIO() { return m_io; }
@@ -118,6 +120,7 @@ private:
 	unsigned long m_checksum;
 	unsigned long m_firmwareSize;
 	unsigned long m_configSize;
+	unsigned long m_flashConfigSize;
 	unsigned long m_lockdownSize;
 	long m_imageSize;
 	unsigned long m_firmwareBuildID;
@@ -129,6 +132,7 @@ private:
 
 	unsigned char * m_firmwareData;
 	unsigned char * m_configData;
+	unsigned char * m_flashConfigData;
 	unsigned char * m_lockdownData;
 	unsigned char * m_memBlock;
 	unsigned long m_cntrAddr;	// BL_V7

@@ -77,6 +77,10 @@ void FirmwareImage::ParseHierarchicalImg()
 			m_firmwareData = content;
 			m_firmwareSize = length;
 			break;
+		case FLASH_CONFIG_CONTAINER:
+			m_flashConfigData = content;
+			m_flashConfigSize = length;
+			break;
 		case UI_CONFIG_CONTAINER:
 		case CORE_CONFIG_CONTAINER:
 			m_configData = content;

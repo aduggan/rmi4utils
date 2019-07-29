@@ -155,7 +155,9 @@ class RMI4Update
 public:
 	RMI4Update(RMIDevice & device, FirmwareImage & firmwareImage) : m_device(device), 
 			m_firmwareImage(firmwareImage), m_writeBlockWithCmd(true)
-	{}
+	{
+		m_IsErased = false;
+	}
 	int UpdateFirmware(bool force = false, bool performLockdown = false);
 
 private:
@@ -170,7 +172,8 @@ private:
 	int EnterFlashProgrammingV7();
 	int EraseFirmwareV7();
 	int WriteFirmwareV7();
-	int WriteConfigV7();
+	int WriteCoreConfigV7();
+	int WriteFlashConfigV7();
 	int EnterFlashProgramming();
 	int WriteBlocks(unsigned char *block, unsigned short count, unsigned char cmd);
 	int WaitForIdle(int timeout_ms, bool readF34OnSucess = true);
@@ -216,6 +219,8 @@ private:
 
 	unsigned short m_f34StatusAddr;
 	enum bl_version m_blVersion;
+
+	bool m_IsErased;
 };
 
 #endif // _RMI4UPDATE_H_
