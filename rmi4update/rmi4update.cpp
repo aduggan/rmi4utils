@@ -1300,8 +1300,7 @@ int RMI4Update::WaitForIdle(int timeout_ms, bool readF34OnSucess)
 			 * with receiving attention reports and that should be fixed.
 			 */
 			fprintf(stderr, "RMI4Update::WaitForIdle Timed out waiting for attn report\n");
-		} else if(rc == 1)
-			fprintf(stdout, "RMI4Update::WaitForIdle Got attention!\n");
+		}
 	}
 
 	if (rc <= 0 || readF34OnSucess) {

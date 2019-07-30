@@ -297,8 +297,6 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 	else
 		bytesPerRequest = len;
 
-	fprintf(stdout, "HIDDevice::Read  R %x : ", addr);
-
 	for (totalBytesRead = 0; totalBytesRead < len; totalBytesRead += bytesReadPerRequest) {
 		count = 0;
 		if ((len - totalBytesRead) < bytesPerRequest)
@@ -354,12 +352,6 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 		addr += bytesPerRequest;
 	}
 
-	
-	for(int i =0 ; i<len ; i++){
-		fprintf(stdout, "%x ", buf[i]);
-	}
-	fprintf(stdout, "\n");
-
 	return totalBytesRead;
 }
 
@@ -378,11 +370,7 @@ int HIDDevice::Write(unsigned short addr, const unsigned char *buf, unsigned sho
 	m_outputReport[HID_RMI4_WRITE_OUTPUT_ADDR] = addr & 0xFF;
 	m_outputReport[HID_RMI4_WRITE_OUTPUT_ADDR + 1] = (addr >> 8) & 0xFF;
 	memcpy(&m_outputReport[HID_RMI4_WRITE_OUTPUT_DATA], buf, len);
-	fprintf(stdout, "HIDDevice::Write  W %x : ", addr);
-	for(int i =0 ; i<len ; i++){
-		fprintf(stdout, "%x ", buf[i]);
-	}
-	fprintf(stdout, "\n");
+
 	for (;;) {
 		m_bCancel = false;
 		count = write(m_fd, m_outputReport, m_outputReportSize);
