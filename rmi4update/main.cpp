@@ -32,8 +32,8 @@
 #include "rmi4update.h"
 
 #define VERSION_MAJOR		1
-#define VERSION_MINOR		2
-#define VERSION_SUBMINOR	14
+#define VERSION_MINOR		3
+#define VERSION_SUBMINOR	0
 
 #define RMI4UPDATE_GETOPTS	"hfd:t:pclv"
 
