@@ -136,15 +136,15 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 		}
 		fprintf(stdout, "Enable Flash done V7+...\n");
 
-        if (!m_IsErased){
-            fprintf(stdout, "Erasing FW V7+...\n");
-            rc = EraseFirmwareV7();
-            if (rc != UPDATE_SUCCESS) {
-                fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-                goto reset;
-            }
-            fprintf(stdout, "Erasing FW done V7+...\n");
-        }
+		if (!m_IsErased){
+			fprintf(stdout, "Erasing FW V7+...\n");
+			rc = EraseFirmwareV7();
+			if (rc != UPDATE_SUCCESS) {
+				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+				goto reset;
+			}
+			fprintf(stdout, "Erasing FW done V7+...\n");
+		}
 		if(m_bootloaderID[1] == 8){
 			if (m_firmwareImage.GetFlashConfigData()) {
 				fprintf(stdout, "Writing flash configuration V8...\n");
@@ -720,7 +720,7 @@ int RMI4Update::WriteFirmwareV7()
 			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
 			return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
 		}
-        
+
 		//Wait for completion
 		do {
 			Sleep(20);
@@ -872,7 +872,7 @@ int RMI4Update::WriteFlashConfigV7()
 	/* calculate the count */
 	partition_id = FLASH_CONFIG_PARTITION;
 
-    FlashConfigBlockCount = m_firmwareImage.GetFlashConfigSize() / m_blockSize;
+	FlashConfigBlockCount = m_firmwareImage.GetFlashConfigSize() / m_blockSize;
 
 	remain_block = (FlashConfigBlockCount % m_payloadLength);
 	transaction_count = (FlashConfigBlockCount / m_payloadLength);
@@ -976,44 +976,44 @@ int RMI4Update::EraseFirmwareV7()
 	erase_cmd[6] = m_bootloaderID[0];
 	erase_cmd[7] = m_bootloaderID[1];
 	if(m_bootloaderID[1] == 8){
-	    /* Set Command to Erase AP for BL8*/
-	    erase_cmd[5] = (unsigned char)CMD_V7_ERASE_AP;
+		/* Set Command to Erase AP for BL8*/
+		erase_cmd[5] = (unsigned char)CMD_V7_ERASE_AP;
 	} else {
-	    /* Set Command to Erase AP for BL7*/
-	    erase_cmd[5] = (unsigned char)CMD_V7_ERASE;
+		/* Set Command to Erase AP for BL7*/
+		erase_cmd[5] = (unsigned char)CMD_V7_ERASE;
 	}
 	
 	fprintf(stdout, "Erase command : ");
-    for(int i = 0 ;i<8;i++){
-       fprintf(stdout, "%d ", erase_cmd[i]);
+	for(int i = 0 ;i<8;i++){
+		fprintf(stdout, "%d ", erase_cmd[i]);
 	}
 	fprintf(stdout, "\n");
 
-    rmi4update_poll();
-    if (!m_inBLmode)
-        return UPDATE_FAIL_DEVICE_NOT_IN_BOOTLOADER;
-    if(m_bootloaderID[1] == 8){
+	rmi4update_poll();
+	if (!m_inBLmode)
+		return UPDATE_FAIL_DEVICE_NOT_IN_BOOTLOADER;
+	if(m_bootloaderID[1] == 8){
 		// For BL8 device, we need hold 1 seconds after querying
 		// F34 status to avoid not get attention by following giving 
 		// erase command.
-        Sleep(1000);
-    }
+		Sleep(1000);
+	}
 
 	rc = m_device.Write(m_f34.GetDataBase() + 1, erase_cmd, sizeof(erase_cmd));
 	if (rc != sizeof(erase_cmd))
 		return UPDATE_FAIL_WRITE_F01_CONTROL_0;
 
-    Sleep(100);
+	Sleep(100);
 
 	//Wait from ATTN
 	if(m_bootloaderID[1] == 8){
 		// Wait for attention for BL8 device.
-	    rc = WaitForIdle(RMI_F34_ERASE_V8_WAIT_MS, false);
-        if (rc != UPDATE_SUCCESS) {
-	        fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-	        return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
-	    }
-    }
+		rc = WaitForIdle(RMI_F34_ERASE_V8_WAIT_MS, false);
+		if (rc != UPDATE_SUCCESS) {
+			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+			return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+		}
+	}
 	do {
 		Sleep(20);
 		rmi4update_poll();
@@ -1028,22 +1028,22 @@ int RMI4Update::EraseFirmwareV7()
 		return UPDATE_FAIL_WRITE_F01_CONTROL_0;
 	}
  
-    if(m_bootloaderID[1] == 7){
+	if(m_bootloaderID[1] == 7){
 		// For BL7, we need erase config partition.
 		fprintf(stdout, "Start to erase config\n");
 		erase_cmd[0] = CORE_CONFIG_PARTITION;
 		erase_cmd[6] = m_bootloaderID[0];
-	    erase_cmd[7] = m_bootloaderID[1];
-	    erase_cmd[5] = (unsigned char)CMD_V7_ERASE;
+		erase_cmd[7] = m_bootloaderID[1];
+		erase_cmd[5] = (unsigned char)CMD_V7_ERASE;
 
-	    Sleep(100);
-	    rmi4update_poll();
-	    if (!m_inBLmode)
+		Sleep(100);
+		rmi4update_poll();
+		if (!m_inBLmode)
 		  return UPDATE_FAIL_DEVICE_NOT_IN_BOOTLOADER;
 
-	    rc = m_device.Write(m_f34.GetDataBase() + 1, erase_cmd, sizeof(erase_cmd));
-	    if (rc != sizeof(erase_cmd))
-		  return UPDATE_FAIL_WRITE_F01_CONTROL_0;
+		rc = m_device.Write(m_f34.GetDataBase() + 1, erase_cmd, sizeof(erase_cmd));
+		if (rc != sizeof(erase_cmd))
+			return UPDATE_FAIL_WRITE_F01_CONTROL_0;
 
 		//Wait from ATTN
 		Sleep(100);
@@ -1055,19 +1055,19 @@ int RMI4Update::EraseFirmwareV7()
 		}
 
 
-	    do {
-		    Sleep(20);
-		    rmi4update_poll();
-		    if (m_flashStatus == SUCCESS){
-			  break;
-		    }
-		    retry++;
-	    } while(retry < 20);
+		do {
+			Sleep(20);
+			rmi4update_poll();
+			if (m_flashStatus == SUCCESS){
+				break;
+			}
+			retry++;
+		} while(retry < 20);
 
-	    if (m_flashStatus != SUCCESS) {
-		    fprintf(stdout, "err flash_status = %d\n", m_flashStatus);
-		    return UPDATE_FAIL_WRITE_F01_CONTROL_0;
-	    }
+		if (m_flashStatus != SUCCESS) {
+			fprintf(stdout, "err flash_status = %d\n", m_flashStatus);
+			return UPDATE_FAIL_WRITE_F01_CONTROL_0;
+		}
 	}
 
 	return UPDATE_SUCCESS;
@@ -1103,7 +1103,7 @@ int RMI4Update::EnterFlashProgrammingV7()
 			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
 			return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
 		}
-      
+
 		//Wait from ATTN
 		do {
 			Sleep(20);
@@ -1136,7 +1136,7 @@ int RMI4Update::EnterFlashProgrammingV7()
 
 	} else
 		fprintf(stdout, "Already in BL mode, skip...\n");
- 	
+	
 	// workaround
 	fprintf(stdout, "Erase in BL mode\n");
 	rc = EraseFirmwareV7();
