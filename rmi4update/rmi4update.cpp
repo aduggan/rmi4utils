@@ -440,9 +440,9 @@ int RMI4Update::ReadFlashConfig()
 	if (partition_temp)
 		free(partition_temp);
 
-	m_fwBlockCount = m_partitionCore->partition_len;
-	m_configBlockCount = m_partitionConfig->partition_len;
-	m_guestBlockCount = m_partitionGuest->partition_len;
+	m_fwBlockCount = m_partitionCore ? m_partitionCore->partition_len : 0;
+	m_configBlockCount = m_partitionConfig ? m_partitionConfig->partition_len : 0;
+	m_guestBlockCount = m_partitionGuest ? m_partitionGuest->partition_len : 0;
 	fprintf(stdout, "F34 fw blocks:     %d\n", m_fwBlockCount);
 	fprintf(stdout, "F34 config blocks: %d\n", m_configBlockCount);
 	fprintf(stdout, "F34 guest blocks:     %d\n", m_guestBlockCount);
