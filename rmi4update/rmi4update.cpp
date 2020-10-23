@@ -405,6 +405,11 @@ int RMI4Update::ReadFlashConfig()
 		free(data_temp);
 	}
 
+	// Initialize as NULL here to avoid segmentation fault.
+	m_partitionConfig = NULL;
+	m_partitionCore = NULL;
+	m_partitionGuest = NULL;
+
 	/* parse the config length */
 	for (i = 2; i < m_blockSize * m_flashConfigLength; i = i + 8)
 	{
@@ -439,7 +444,7 @@ int RMI4Update::ReadFlashConfig()
 
 	if (partition_temp)
 		free(partition_temp);
-
+	
 	m_fwBlockCount = m_partitionCore ? m_partitionCore->partition_len : 0;
 	m_configBlockCount = m_partitionConfig ? m_partitionConfig->partition_len : 0;
 	m_guestBlockCount = m_partitionGuest ? m_partitionGuest->partition_len : 0;
