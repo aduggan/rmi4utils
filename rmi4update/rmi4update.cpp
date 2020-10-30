@@ -444,7 +444,7 @@ int RMI4Update::ReadFlashConfig()
 
 	if (partition_temp)
 		free(partition_temp);
-	
+
 	m_fwBlockCount = m_partitionCore ? m_partitionCore->partition_len : 0;
 	m_configBlockCount = m_partitionConfig ? m_partitionConfig->partition_len : 0;
 	m_guestBlockCount = m_partitionGuest ? m_partitionGuest->partition_len : 0;
@@ -1141,17 +1141,17 @@ int RMI4Update::EnterFlashProgrammingV7()
 
 	} else
 		fprintf(stdout, "Already in BL mode, skip...\n");
-	
-	// workaround
-	fprintf(stdout, "Erase in BL mode\n");
-	rc = EraseFirmwareV7();
-	if (rc != UPDATE_SUCCESS) {
-		fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-		return UPDATE_FAIL_ERASE_ALL;
-	}
-	fprintf(stdout, "Erase in BL mode end\n");
 
-	m_IsErased = true;
+	if(m_device.GetDeviceType() != RMI_DEVICE_TYPE_TOUCHPAD) {
+		// workaround for touchscreen only
+		fprintf(stdout, "Erase in BL mode\n");
+		rc = EraseFirmwareV7();
+		if (rc != UPDATE_SUCCESS) {
+			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+			return UPDATE_FAIL_ERASE_ALL;
+		}
+		fprintf(stdout, "Erase in BL mode end\n");
+	}
 
 	m_device.RebindDriver();
 	Sleep(RMI_F34_ENABLE_WAIT_MS);

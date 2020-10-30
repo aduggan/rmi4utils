@@ -250,13 +250,16 @@ void HIDDevice::ParseReportDescriptor()
 					// usage.
 					if (m_deviceType == RMI_DEVICE_TYPE_TOUCHSCREEN)
 						break;
-
+				
 					if (m_rptDesc.value[i + 1] == 0x01) {
 						if (m_rptDesc.value[i + 2] == 0x09 && m_rptDesc.value[i + 3] == 0x02)
 							m_deviceType = RMI_DEVICE_TYPE_TOUCHPAD;
 					} else if (m_rptDesc.value[i + 1] == 0x0d) {
 						if (m_rptDesc.value[i + 2] == 0x09 && m_rptDesc.value[i + 3] == 0x04)
 							m_deviceType = RMI_DEVICE_TYPE_TOUCHSCREEN;
+						// for Precision Touch Pad
+						else if (m_rptDesc.value[i + 2] == 0x09 && m_rptDesc.value[i + 3] == 0x05)
+							m_deviceType = RMI_DEVICE_TYPE_TOUCHPAD;
 					}
 					i += 3;
 					break;
