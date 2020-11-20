@@ -749,9 +749,10 @@ void HIDDevice::RebindDriver()
 		}
 
 	}
-    
+ 
 	bindFile = m_driverPath + "bind";
 	unbindFile = m_driverPath + "unbind";
+
 	Sleep(500);
 	if (!WriteDeviceNameToFile(unbindFile.c_str(), m_transportDeviceName.c_str())) {
 		fprintf(stderr, "Failed to unbind HID device %s: %s\n",
@@ -787,7 +788,15 @@ bool HIDDevice::FindTransportDevice(uint32_t bus, std::string & hidDeviceName,
 
 	if (bus == BUS_I2C) {
 		devicePrefix += "i2c/";
-		driverPath = devicePrefix + "drivers/i2c_hid/";
+		// From new patch released on 2020/11, i2c_hid would be renamed as i2c_hid_acpi,
+		// and also need backward compatible.
+		std::string driverPathTemp = devicePrefix + "drivers/i2c_hid/";
+		DIR *driverPathtest = opendir(driverPathTemp.c_str());
+		if(!driverPathtest) {
+			driverPath = devicePrefix + "drivers/i2c_hid_acpi/";
+		} else {
+			driverPath = devicePrefix + "drivers/i2c_hid/";
+		}
 	} else {
 		devicePrefix += "usb/";
 		driverPath = devicePrefix + "drivers/usbhid/";
