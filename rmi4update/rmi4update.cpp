@@ -1151,9 +1151,9 @@ int RMI4Update::EnterFlashProgrammingV7()
 			return UPDATE_FAIL_ERASE_ALL;
 		}
 		fprintf(stdout, "Erase in BL mode end\n");
+		m_device.RebindDriver();
 	}
 
-	m_device.RebindDriver();
 	Sleep(RMI_F34_ENABLE_WAIT_MS);
 
 	rc = FindUpdateFunctions();
@@ -1183,7 +1183,10 @@ int RMI4Update::EnterFlashProgramming()
 		return UPDATE_FAIL_ENABLE_FLASH_PROGRAMMING;
 
 	Sleep(RMI_F34_ENABLE_WAIT_MS);
-	m_device.RebindDriver();
+	if(m_device.GetDeviceType() != RMI_DEVICE_TYPE_TOUCHPAD) {
+		fprintf(stdout, "not TouchPad, rebind driver here\n");
+		m_device.RebindDriver();
+	}
 	rc = WaitForIdle(0);
 	if (rc != UPDATE_SUCCESS)
 		return UPDATE_FAIL_NOT_IN_IDLE_STATE;
