@@ -664,7 +664,12 @@ bool HIDDevice::CheckABSEvent()
 	unsigned long bit[EV_MAX][NBITS(KEY_MAX)];
 
 
+#ifdef __BIONIC__
+	// Android's libc doesn't have the GNU versionsort extension.
+	ndev = scandir(DEV_INPUT_EVENT, &namelist, is_event_device, alphasort);
+#else
 	ndev = scandir(DEV_INPUT_EVENT, &namelist, is_event_device, versionsort);
+#endif
 	if (ndev <= 0)
 		return false;
 	for (i = 0; i < ndev; i++)
