@@ -1131,14 +1131,6 @@ int RMI4Update::EnterFlashProgrammingV7()
 		if (!m_inBLmode)
 			return UPDATE_FAIL_DEVICE_NOT_IN_BOOTLOADER;
 
-		rc = FindUpdateFunctions();
-		if (rc < 0)
-			return UPDATE_FAIL_QUERY_BASIC_PROPERTIES;
-
-		rc = ReadF34QueriesV7();
-		if (rc < 0)
-			return UPDATE_FAIL_READ_F34_QUERIES;
-
 	} else
 		fprintf(stdout, "Already in BL mode, skip...\n");
 
