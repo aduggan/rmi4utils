@@ -718,13 +718,16 @@ int RMI4Update::WriteFirmwareV7()
 			free(data_temp);
 		} while (left_bytes);
 
-		// Sleep 100 ms and wait for attention.
-		Sleep(100);
-		rc = WaitForIdle(RMI_F34_IDLE_WAIT_MS, false);
-		if (rc != UPDATE_SUCCESS) {
-			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+		if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
+			// Sleep 100 ms and wait for attention for touchpad only.
+			Sleep(100);
+			rc = WaitForIdle(RMI_F34_IDLE_WAIT_MS, false);
+			if (rc != UPDATE_SUCCESS) {
+				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+				return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+			}
 		}
+		
 
 		//Wait for completion
 		do {
@@ -829,11 +832,13 @@ int RMI4Update::WriteCoreConfigV7()
 			free(data_temp);
 		} while (left_bytes);
 
-		// Wait for attention.
-		rc = WaitForIdle(RMI_F34_IDLE_WAIT_MS, false);
-		if (rc != UPDATE_SUCCESS) {
-			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+		if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
+			// Wait for attention for touchpad only.
+			rc = WaitForIdle(RMI_F34_IDLE_WAIT_MS, false);
+			if (rc != UPDATE_SUCCESS) {
+				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+				return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+			}
 		}
 
 		//Wait for completion
@@ -943,11 +948,13 @@ int RMI4Update::WriteFlashConfigV7()
 			free(data_temp);
 		} while (left_bytes);
 
-		// Wair for attention.
-		rc = WaitForIdle(RMI_F34_IDLE_WAIT_MS, false);
-		if (rc != UPDATE_SUCCESS) {
-			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+		if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
+			// Wair for attention for touchpad only.
+			rc = WaitForIdle(RMI_F34_IDLE_WAIT_MS, false);
+			if (rc != UPDATE_SUCCESS) {
+				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+				return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+			}
 		}
 
 		//Wait for completion
@@ -1012,11 +1019,13 @@ int RMI4Update::EraseFirmwareV7()
 
 	//Wait from ATTN
 	if(m_bootloaderID[1] == 8){
-		// Wait for attention for BL8 device.
-		rc = WaitForIdle(RMI_F34_ERASE_V8_WAIT_MS, false);
-		if (rc != UPDATE_SUCCESS) {
-			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+		if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
+			// Wait for attention for BL8 touchpad.
+			rc = WaitForIdle(RMI_F34_ERASE_V8_WAIT_MS, false);
+			if (rc != UPDATE_SUCCESS) {
+				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+				return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+			}
 		}
 	}
 	do {
@@ -1050,13 +1059,15 @@ int RMI4Update::EraseFirmwareV7()
 		if (rc != sizeof(erase_cmd))
 			return UPDATE_FAIL_WRITE_F01_CONTROL_0;
 
-		//Wait from ATTN
-		Sleep(100);
+		if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
+			//Wait from ATTN for touchpad only.
+			Sleep(100);
 
-		rc = WaitForIdle(RMI_F34_ERASE_WAIT_MS, true);
-		if (rc != UPDATE_SUCCESS) {
-			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+			rc = WaitForIdle(RMI_F34_ERASE_WAIT_MS, true);
+			if (rc != UPDATE_SUCCESS) {
+				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+				return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+			}
 		}
 
 
@@ -1103,10 +1114,12 @@ int RMI4Update::EnterFlashProgrammingV7()
 		if (rc != sizeof(EnterCmd))
 			return UPDATE_FAIL_WRITE_F01_CONTROL_0;
 
-		rc = WaitForIdle(RMI_F34_ENABLE_WAIT_MS, false);
-		if (rc != UPDATE_SUCCESS) {
-			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+		if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
+			rc = WaitForIdle(RMI_F34_ENABLE_WAIT_MS, false);
+			if (rc != UPDATE_SUCCESS) {
+				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+				return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+			}
 		}
 
 		//Wait from ATTN
