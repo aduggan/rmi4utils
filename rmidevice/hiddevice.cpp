@@ -291,7 +291,12 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 	size_t bytesToRequest;
 	int reportId;
 	int rc;
+	struct timeval tv;
+	int resendCount = 0;
 
+	tv.tv_sec = 10 / 1000;
+	tv.tv_usec = (10 % 1000) * 1000;
+	
 	if (!m_deviceOpen)
 		return -1;
 
@@ -301,6 +306,11 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 		bytesPerRequest = len;
 
 	for (totalBytesRead = 0; totalBytesRead < len; totalBytesRead += bytesReadPerRequest) {
+Resend:
+		if (resendCount == 3) {
+			fprintf(stderr, "resend count exceed, return as failure\n");
+			return -1;
+		}
 		count = 0;
 		if ((len - totalBytesRead) < bytesPerRequest)
 			bytesToRequest = len % bytesPerRequest;
@@ -334,7 +344,8 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 
 		bytesReadPerRequest = 0;
 		while (bytesReadPerRequest < bytesToRequest) {
-			rc = GetReport(&reportId);
+			// Add timeout 10 ms for select() called in GetReport().
+			rc = GetReport(&reportId, &tv);
 			if (rc > 0 && reportId == RMI_READ_DATA_REPORT_ID) {
 				if (static_cast<ssize_t>(m_inputReportSize) <
 				    std::max(HID_RMI4_READ_INPUT_COUNT,
@@ -350,6 +361,11 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 					bytesInDataReport);
 				bytesReadPerRequest += bytesInDataReport;
 				m_dataBytesRead = 0;
+				resendCount = 0;
+			} else {
+				fprintf(stderr, "Some error with GetReport : rc(%d), reportID(0x%x)\n", rc, reportId);
+				resendCount += 1;
+				goto Resend;
 			}
 		}
 		addr += bytesPerRequest;
@@ -391,7 +407,7 @@ int HIDDevice::SetMode(int mode)
 {
 	int rc;
 	char buf[2];
-
+	
 	if (!m_deviceOpen)
 		return -1;
 
