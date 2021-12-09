@@ -27,6 +27,7 @@
 #include <time.h>
 #include <string>
 #include <sstream>
+#include <time.h>
 
 #include "hiddevice.h"
 #include "rmi4update.h"
@@ -149,7 +150,7 @@ int main(int argc, char **argv)
 
 	if (printFirmwareProps) {
 		std::string props;
-
+		
 		if (!deviceName) {
 			fprintf(stderr, "Specifiy which device to query\n");
 			return 1;
