@@ -384,6 +384,17 @@ int RMI4Update::ReadFlashConfig()
 		if (rc != sizeof(cmd_buf))
 			return UPDATE_FAIL_WRITE_FLASH_COMMAND;
 
+		if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
+			// Sleep 20 ms and wait for attention for touchpad only.
+			Sleep(20);
+			rc = WaitForIdle(20, false);
+			if (rc != UPDATE_SUCCESS) {
+				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+				return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+			}
+			fprintf(stdout, "Got attention\n");
+		}
+
 		//Wait for completion
 		do {
 			Sleep(20);
