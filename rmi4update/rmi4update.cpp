@@ -61,6 +61,7 @@
 #define RMI_F34_ERASE_WAIT_MS (5 * 1000)
 #define RMI_F34_ERASE_V8_WAIT_MS (10000)
 #define RMI_F34_IDLE_WAIT_MS 500
+#define RMI_F34_PARTITION_READ_WAIT_MS 20
 
 /* Most recent device status event */
 #define RMI_F01_STATUS_CODE(status)		((status) & 0x0f)
@@ -387,7 +388,7 @@ int RMI4Update::ReadFlashConfig()
 		if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
 			// Sleep 20 ms and wait for attention for touchpad only.
 			Sleep(20);
-			rc = WaitForIdle(20, false);
+			rc = WaitForIdle(RMI_F34_PARTITION_READ_WAIT_MS, false);
 			if (rc != UPDATE_SUCCESS) {
 				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
 				return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
