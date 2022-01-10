@@ -67,8 +67,14 @@ int GetFirmwareProps(const char * deviceFile, std::string &props, bool configid)
 	if (rc)
 		return rc;
 
+	// Clear all interrupts before parsing to avoid unexpected interrupts.
+	rmidevice.ToggleInterruptMask(false);
+
 	rmidevice.ScanPDT(0x1);
 	rmidevice.QueryBasicProperties();
+
+	// Restore the interrupts
+	rmidevice.ToggleInterruptMask(true);
 
 	if (configid) {
 		ss << std::hex << rmidevice.GetConfigID();
