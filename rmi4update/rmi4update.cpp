@@ -97,13 +97,22 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 	long long int duration_us = 0;
 	int rc;
 	const unsigned char eraseAll = RMI_F34_ERASE_ALL;
+
+	// Clear all interrupts before parsing to avoid unexpected interrupts.
+	m_device.ToggleInterruptMask(false);
 	rc = FindUpdateFunctions();
-	if (rc != UPDATE_SUCCESS)
+	if (rc != UPDATE_SUCCESS) {
+		m_device.ToggleInterruptMask(true);
 		return rc;
+	}
 
 	rc = m_device.QueryBasicProperties();
-	if (rc < 0)
-		return UPDATE_FAIL_QUERY_BASIC_PROPERTIES;
+	if (rc < 0) {
+		m_device.ToggleInterruptMask(true);
+		return UPDATE_FAIL_QUERY_BASIC_PROPERTIES; 
+	}
+	// Restore the interrupts
+	m_device.ToggleInterruptMask(true);
 
 	if (!force && m_firmwareImage.HasIO()) {
 		if (m_firmwareImage.GetFirmwareID() <= m_device.GetFirmwareID()) {

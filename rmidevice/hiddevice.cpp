@@ -422,6 +422,34 @@ int HIDDevice::SetMode(int mode)
 	return 0;
 }
 
+int HIDDevice::ToggleInterruptMask(bool enable)
+{
+	int rc;
+	char buf[2];
+
+	if (GetDeviceType() != RMI_DEVICE_TYPE_TOUCHPAD) {
+		fprintf(stdout, "Not TP, skip toggle interrupts mask\n");
+		return 0;
+	}
+	
+	if (!m_deviceOpen)
+		return -1;
+
+	buf[0] = 0xE;
+	if (enable) {
+		buf[1] = 0;
+	} else {
+		buf[1] = 8;
+	}
+	rc = ioctl(m_fd, HIDIOCSFEATURE(2), buf);
+	if (rc < 0) {
+		perror("HIDIOCSFEATURE");
+		return rc;
+	}
+	Sleep(10);
+	return 0;
+}
+
 void HIDDevice::Close()
 {
 	RMIDevice::Close();
