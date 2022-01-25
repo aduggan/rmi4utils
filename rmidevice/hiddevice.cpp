@@ -307,9 +307,11 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 
 	for (totalBytesRead = 0; totalBytesRead < len; totalBytesRead += bytesReadPerRequest) {
 Resend:
-		if (resendCount == 3) {
-			fprintf(stderr, "resend count exceed, return as failure\n");
-			return -1;
+		if (GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD) {
+			if (resendCount == 3) {
+				fprintf(stderr, "resend count exceed, return as failure\n");
+				return -1;
+			}
 		}
 		count = 0;
 		if ((len - totalBytesRead) < bytesPerRequest)
@@ -344,8 +346,13 @@ Resend:
 
 		bytesReadPerRequest = 0;
 		while (bytesReadPerRequest < bytesToRequest) {
-			// Add timeout 10 ms for select() called in GetReport().
-			rc = GetReport(&reportId, &tv);
+			if (GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD) {
+				// Add timeout 10 ms for select() called in GetReport().
+				rc = GetReport(&reportId, &tv);
+			} else {
+				// Touch Screen
+				rc = GetReport(&reportId);
+			}
 			if (rc > 0 && reportId == RMI_READ_DATA_REPORT_ID) {
 				if (static_cast<ssize_t>(m_inputReportSize) <
 				    std::max(HID_RMI4_READ_INPUT_COUNT,
@@ -361,8 +368,11 @@ Resend:
 					bytesInDataReport);
 				bytesReadPerRequest += bytesInDataReport;
 				m_dataBytesRead = 0;
-				resendCount = 0;
-			} else {
+				if (GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD) {
+					// Resend sheme is supported on TP only.
+					resendCount = 0;
+				}
+			} else if (GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD) {
 				fprintf(stderr, "Some error with GetReport : rc(%d), reportID(0x%x)\n", rc, reportId);
 				resendCount += 1;
 				goto Resend;
