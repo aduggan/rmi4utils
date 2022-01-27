@@ -437,6 +437,10 @@ int HIDDevice::ToggleInterruptMask(bool enable)
 	int rc;
 	char buf[2];
 
+	// Not use this feature temporarily. Need more implementation to check whether it
+	// exists this feature in device.
+	return 0;
+
 	if (GetDeviceType() != RMI_DEVICE_TYPE_TOUCHPAD) {
 		fprintf(stdout, "Not TP, skip toggle interrupts mask\n");
 		return 0;
