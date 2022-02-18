@@ -1208,14 +1208,20 @@ int RMI4Update::EnterFlashProgramming()
 	if (rc != 1)
 		return UPDATE_FAIL_ENABLE_FLASH_PROGRAMMING;
 
-	Sleep(RMI_F34_ENABLE_WAIT_MS);
+	
 	if(m_device.GetDeviceType() != RMI_DEVICE_TYPE_TOUCHPAD) {
 		fprintf(stdout, "not TouchPad, rebind driver here\n");
+		Sleep(RMI_F34_ENABLE_WAIT_MS);
 		m_device.RebindDriver();
+		rc = WaitForIdle(0);
+		if (rc != UPDATE_SUCCESS)
+			return UPDATE_FAIL_NOT_IN_IDLE_STATE;
+	} else {
+		// For TouchPad
+		rc = WaitForIdle(RMI_F34_ENABLE_WAIT_MS);
+		if (rc != UPDATE_SUCCESS)
+			return UPDATE_FAIL_NOT_IN_IDLE_STATE;
 	}
-	rc = WaitForIdle(0);
-	if (rc != UPDATE_SUCCESS)
-		return UPDATE_FAIL_NOT_IN_IDLE_STATE;
 
 	if (!m_programEnabled)
 		return UPDATE_FAIL_PROGRAMMING_NOT_ENABLED;
