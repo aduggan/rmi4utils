@@ -34,7 +34,7 @@
 
 #define VERSION_MAJOR		1
 #define VERSION_MINOR		3
-#define VERSION_SUBMINOR	8
+#define VERSION_SUBMINOR	9
 
 #define RMI4UPDATE_GETOPTS	"hfd:t:pclv"
 
