@@ -125,9 +125,14 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 
 	fprintf(stdout, "Device Properties:\n");
 	m_device.PrintProperties();
-	rc = m_firmwareImage.VerifyImageProductID(m_device.GetProductID());
-	if (rc != UPDATE_SUCCESS)
-		return rc;
+	if (m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD) {
+		rc = m_firmwareImage.VerifyImageProductID(m_device.GetProductID());
+		if (rc != UPDATE_SUCCESS)
+			return rc;
+	} else {
+		fprintf(stdout, "not touchpad, skip checking product ID\n");
+	}
+	
 
 	rc = DisableNonessentialInterupts();
 	if (rc != UPDATE_SUCCESS)
