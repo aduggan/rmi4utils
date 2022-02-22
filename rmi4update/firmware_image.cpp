@@ -220,6 +220,17 @@ int FirmwareImage::VerifyImageMatchesDevice(unsigned long deviceFirmwareSize,
 	return UPDATE_SUCCESS;
 }
 
+int FirmwareImage::VerifyImageProductID(char* deviceProductID)
+{
+	if (strcmp(m_productID, deviceProductID) == 0) {
+		fprintf(stdout, "image matched\n");
+		return UPDATE_SUCCESS;
+	} else {
+		fprintf (stdout, "image not match, terminated\n");
+		return UPDATE_FAIL_VERIFY_IMAGE_PRODUCTID_NOT_MATCH;
+	}
+}
+
 FirmwareImage::~FirmwareImage()
 {
 	delete [] m_memBlock;

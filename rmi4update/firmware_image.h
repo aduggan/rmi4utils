@@ -108,6 +108,8 @@ public:
 	unsigned long GetFlashConfigSize() { return m_flashConfigSize; }
 	unsigned long GetLockdownSize() { return m_lockdownSize; }
 	unsigned long GetFirmwareID() { return m_firmwareBuildID; }
+	int VerifyImageProductID(char* deviceProductID);
+
 	bool HasIO() { return m_io; }
 	~FirmwareImage();
 

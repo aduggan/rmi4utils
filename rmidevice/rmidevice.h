@@ -62,6 +62,7 @@ public:
 	int GetFirmwareVersionMajor() { return m_firmwareVersionMajor; }
 	int GetFirmwareVersionMinor() { return m_firmwareVersionMinor; }
 	virtual int QueryBasicProperties();
+	char *GetProductID() { return (char *)m_productID; }
 	
 	int SetRMIPage(unsigned char page);
 	

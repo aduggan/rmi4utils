@@ -125,6 +125,9 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 
 	fprintf(stdout, "Device Properties:\n");
 	m_device.PrintProperties();
+	rc = m_firmwareImage.VerifyImageProductID(m_device.GetProductID());
+	if (rc != UPDATE_SUCCESS)
+		return rc;
 
 	rc = DisableNonessentialInterupts();
 	if (rc != UPDATE_SUCCESS)
