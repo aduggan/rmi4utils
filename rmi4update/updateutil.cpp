@@ -27,6 +27,7 @@ const char *update_error_str[] = {
 	"checksum does not match image",				// UPDATE_FAIL_VERIFY_CHECKSUM
 	"image firmware size does not match device",			// UPDATE_FAIL_VERIFY_FIRMWARE_SIZE
 	"image config size does not match device",			// UPDATE_FAIL_VERIFY_CONFIG_SIZE
+	"image product ID does not match device",			// UPDATE_FAIL_VERIFY_IMAGE_PRODUCTID_NOT_MATCH
 	"image version is unsupported",					// UPDATE_FAIL_UNSUPPORTED_IMAGE_VERSION
 	"failed to find F01 on device",					// UPDATE_FAIL_NO_FUNCTION_01
 	"failed to find F34 on device",					// UPDATE_FAIL_NO_FUNCTION_34
