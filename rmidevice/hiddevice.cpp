@@ -40,6 +40,8 @@
 #define RMI_READ_DATA_REPORT_ID             0xb // Input Report
 #define RMI_ATTN_REPORT_ID                  0xc // Input Report
 #define RMI_SET_RMI_MODE_REPORT_ID          0xf // Feature Report
+#define RMI_SET_LID_MODE_REPORT_ID          0xe // Feature Report
+
 
 enum hid_report_type {
 	HID_REPORT_TYPE_UNKNOWN			= 0x0,
@@ -216,6 +218,10 @@ void HIDDevice::ParseReportDescriptor()
 						return;
 					reportCount = m_rptDesc.value[++i];
 					continue;
+				}
+
+				if (m_rptDesc.value[i] == RMI_SET_LID_MODE_REPORT_ID) {
+					hasVendorDefineLIDMode = true;
 				}
 
 				if (m_rptDesc.value[i] == HID_REPORT_TYPE_INPUT)
@@ -421,7 +427,7 @@ int HIDDevice::SetMode(int mode)
 	if (!m_deviceOpen)
 		return -1;
 
-	buf[0] = 0xF;
+	buf[0] = RMI_SET_RMI_MODE_REPORT_ID;
 	buf[1] = mode;
 	rc = ioctl(m_fd, HIDIOCSFEATURE(2), buf);
 	if (rc < 0) {
@@ -437,19 +443,23 @@ int HIDDevice::ToggleInterruptMask(bool enable)
 	int rc;
 	char buf[2];
 
-	// Not use this feature temporarily. Need more implementation to check whether it
-	// exists this feature in device.
-	return 0;
-
 	if (GetDeviceType() != RMI_DEVICE_TYPE_TOUCHPAD) {
 		fprintf(stdout, "Not TP, skip toggle interrupts mask\n");
+		return 0;
+	}
+
+	// We can have information to see whether it exists this feature report currentlt.
+	// However, it might have no action even we set this feature with specific value.
+	// Need FW team's help to query more information about the existence of functions.
+	if (!hasVendorDefineLIDMode) {
+		fprintf(stdout, "no LID mode feature, return\n");
 		return 0;
 	}
 	
 	if (!m_deviceOpen)
 		return -1;
 
-	buf[0] = 0xE;
+	buf[0] = RMI_SET_LID_MODE_REPORT_ID;
 	if (enable) {
 		buf[1] = 0;
 	} else {
