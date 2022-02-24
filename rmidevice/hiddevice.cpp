@@ -861,15 +861,8 @@ bool HIDDevice::FindTransportDevice(uint32_t bus, std::string & hidDeviceName,
 
 	if (bus == BUS_I2C) {
 		devicePrefix += "i2c/";
-		// From new patch released on 2020/11, i2c_hid would be renamed as i2c_hid_acpi,
-		// and also need backward compatible.
-		std::string driverPathTemp = devicePrefix + "drivers/i2c_hid/";
-		DIR *driverPathtest = opendir(driverPathTemp.c_str());
-		if(!driverPathtest) {
-			driverPath = devicePrefix + "drivers/i2c_hid_acpi/";
-		} else {
-			driverPath = devicePrefix + "drivers/i2c_hid/";
-		}
+		// The i2c driver module installed on system is vary (i2c_hid, i2c_hid_acpi, i2c_hid_of),
+		// so we will assign driver path until we get device name later.
 	} else {
 		devicePrefix += "usb/";
 		driverPath = devicePrefix + "drivers/usbhid/";
@@ -908,8 +901,25 @@ bool HIDDevice::FindTransportDevice(uint32_t bus, std::string & hidDeviceName,
 		}
 		closedir(devDir);
 
-		if (deviceFound)
+		if (deviceFound) {
+			if (bus == BUS_I2C) {
+				std::fstream ueventfile;
+				std::string ueventfilepath = fullLinkPath + "/uevent";
+				std::string uevent;
+				std::string modulename;
+				ueventfile.open(ueventfilepath.c_str(), std::ios::in);
+				if(ueventfile.is_open()) {
+					getline(ueventfile, uevent);
+					modulename = uevent.substr(uevent.find("=") + 1, std::string::npos);
+					driverPath = devicePrefix + "drivers/";
+					driverPath += modulename;
+					driverPath += "/";
+				}
+				ueventfile.close();
+			}
 			break;
+		}
+			
 	}
 	closedir(devicesDir);
 
