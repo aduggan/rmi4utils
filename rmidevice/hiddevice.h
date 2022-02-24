@@ -20,6 +20,7 @@
 
 #include <linux/hidraw.h>
 #include <string>
+#include <fstream>
 #include <stdint.h>
 #include "rmidevice.h"
 
