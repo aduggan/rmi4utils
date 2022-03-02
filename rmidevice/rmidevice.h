@@ -38,7 +38,7 @@ class RMIDevice
 public:
 	RMIDevice() : m_functionList(), m_sensorID(0), m_bCancel(false), m_bytesPerReadRequest(0), m_page(-1),
 		      m_deviceType(RMI_DEVICE_TYPE_ANY)
-	{}
+	{ m_hasDebug = false; }
 	virtual ~RMIDevice() {}
 	virtual int Open(const char * filename) = 0;
 	virtual int Read(unsigned short addr, unsigned char *data,
@@ -82,6 +82,8 @@ public:
 
 	virtual bool FindDevice(enum RMIDeviceType type = RMI_DEVICE_TYPE_ANY) = 0;
 	enum RMIDeviceType GetDeviceType() { return m_deviceType; }
+
+	bool m_hasDebug;
 
 protected:
 	std::vector<RMIFunction> m_functionList;
