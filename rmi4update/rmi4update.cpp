@@ -775,6 +775,16 @@ int RMI4Update::WriteFirmwareV7()
 		}
 
 	}
+
+	if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
+		// Write signature.
+		rc = WriteSignatureV7(BLv7_CORE_CODE, m_firmwareImage.GetFirmwareData(), offset);
+		if (rc != UPDATE_SUCCESS) {
+			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+			return rc;	
+		}
+	}
+
 	return UPDATE_SUCCESS;
 }
 
@@ -886,6 +896,16 @@ int RMI4Update::WriteCoreConfigV7()
 		}
 
 	}
+
+	if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
+		// Write signature.
+		rc = WriteSignatureV7(BLv7_CORE_CONFIG, m_firmwareImage.GetConfigData(), offset);
+		if (rc != UPDATE_SUCCESS) {
+			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+			return rc;	
+		}
+	}
+
 	return UPDATE_SUCCESS;
 }
 
@@ -1002,6 +1022,16 @@ int RMI4Update::WriteFlashConfigV7()
 		}
 
 	}
+
+	if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
+		// Write signature.
+		rc = WriteSignatureV7(BLv7_FLASH_CONFIG, m_firmwareImage.GetFlashConfigData(), offset);
+		if (rc != UPDATE_SUCCESS) {
+			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+			return rc;	
+		}
+	}
+
 	return UPDATE_SUCCESS;
 }
 
@@ -1321,6 +1351,93 @@ int RMI4Update::WriteBlocks(unsigned char *block, unsigned short count, unsigned
 		block += m_blockSize;
 	}
 
+	return UPDATE_SUCCESS;
+}
+
+int RMI4Update::WriteSignatureV7(enum signature_BLv7 signature_partition, unsigned char* data, int offset)
+{
+	fprintf(stdout, "Write Signature...\n");
+	int rc;
+	unsigned char off[2] = {0, 0};
+	unsigned char cmd_buf[1];
+	unsigned short dataAddr = m_f34.GetDataBase();
+	int transfer_leng = 0;
+	signature_info signature = m_firmwareImage.GetSignatureInfo()[signature_partition];
+	unsigned char trans_leng_buf[2];
+	unsigned short left_bytes;
+	unsigned short write_size;
+	unsigned short max_write_size;
+	unsigned char *data_temp;
+	int retry = 0;
+	rc = m_device.Write(dataAddr + 2, off, sizeof(off));
+	if (rc != sizeof(off))
+		return UPDATE_FAIL_WRITE_INITIAL_ZEROS;
+
+	// Set Transfer Length
+	transfer_leng = signature.size / m_blockSize;
+	trans_leng_buf[0] = (unsigned char)(transfer_leng & 0xFF);
+	trans_leng_buf[1] = (unsigned char)((transfer_leng & 0xFF00) >> 8);
+
+	rc = m_device.Write(dataAddr + 3, trans_leng_buf, sizeof(trans_leng_buf));
+	if (rc != sizeof(trans_leng_buf))
+		return UPDATE_FAIL_WRITE_FLASH_COMMAND;
+
+	// Set Command to Signature
+	cmd_buf[0] = (unsigned char)CMD_V7_SIGNATURE;
+	rc = m_device.Write(dataAddr + 4, cmd_buf, sizeof(cmd_buf));
+	if (rc != sizeof(cmd_buf))
+		return UPDATE_FAIL_WRITE_FLASH_COMMAND;
+
+	max_write_size = 16;
+	if (max_write_size >= transfer_leng * m_blockSize)
+		max_write_size = transfer_leng * m_blockSize;
+	else if (max_write_size > m_blockSize)
+		max_write_size -= max_write_size % m_blockSize;
+	else
+		max_write_size = m_blockSize;
+
+	left_bytes = transfer_leng * m_blockSize;
+
+	do {
+		if (left_bytes / max_write_size)
+			write_size = max_write_size;
+		else
+			write_size = left_bytes;
+
+		data_temp = (unsigned char *) malloc(sizeof(unsigned char) * write_size);
+		memcpy(data_temp, data + offset, sizeof(char) * write_size);
+		rc = m_device.Write(dataAddr + 5, data_temp, sizeof(char) * write_size);
+		if (rc != ((ssize_t)sizeof(char) * write_size)) {
+			fprintf(stdout, "err write_size = %d; rc = %d\n", write_size, rc);
+			return UPDATE_FAIL_WRITE_BLOCK;
+		}
+
+		offset += write_size;
+		left_bytes -= write_size;
+		free(data_temp);
+	} while (left_bytes);
+
+	// Wair for attention for touchpad only.
+	rc = WaitForIdle(RMI_F34_IDLE_WAIT_MS, false);
+	if (rc != UPDATE_SUCCESS) {
+		fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+		return UPDATE_FAIL_TIMEOUT_WAITING_FOR_ATTN;
+	}
+	
+	//Wait for completion
+	do {
+		Sleep(20);
+		rmi4update_poll();
+		if (m_flashStatus == SUCCESS){
+			break;
+		}
+		retry++;
+	} while(retry < 20);
+
+	if (m_flashStatus != SUCCESS) {
+		fprintf(stdout, "err flash_status = %d\n", m_flashStatus);
+		return UPDATE_FAIL_WRITE_F01_CONTROL_0;
+	}
 	return UPDATE_SUCCESS;
 }
 

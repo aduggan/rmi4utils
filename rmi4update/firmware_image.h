@@ -45,16 +45,16 @@
 
 // Leon add for BL_V7
 #define RMI_IMG_V10_CNTR_ADDR_OFFSET		0x0C
+#define RMI_IMG_V10_SIGNATURE_VERSION_NUMBER 0x11
+#define RMI_IMG_V10_SIGNATURE_LENGTH_OFFSET 0x8
+#define RMI_IMG_V10_SIGNATURE_LENGTH_SIZE 4
 
 struct container_descriptor {
 	unsigned char content_checksum[4];
 	unsigned char container_id[2];
 	unsigned char minor_version;
 	unsigned char major_version;
-	unsigned char reserved_08;
-	unsigned char reserved_09;
-	unsigned char reserved_0a;
-	unsigned char reserved_0b;
+	unsigned char signature_size[4];
 	unsigned char container_option_flags[4];
 	unsigned char content_options_length[4];
 	unsigned char content_options_address[4];
@@ -88,13 +88,25 @@ enum container_id {
 	UTILITY_CONTAINER,
 	UTILITY_PARAMETER_CONTAINER,
 };
+
+enum signature_BLv7 {
+	BLv7_CORE_CODE = 0,
+	BLv7_CORE_CONFIG,
+	BLv7_FLASH_CONFIG,
+	BLv7_MAX
+};
+
+struct signature_info {
+	bool bExisted;
+	unsigned short size;
+};
 // BL_V7 end
 
 class FirmwareImage
 {
 public:
 	FirmwareImage() : m_firmwareBuildID(0), m_packageID(0), m_firmwareData(NULL), m_configData(NULL), m_lockdownData(NULL),
-				m_memBlock(NULL)
+				m_memBlock(NULL), m_hasSignature(false)
 	{}
 	int Initialize(const char * filename);
 	int VerifyImageMatchesDevice(unsigned long deviceFirmwareSize,
@@ -108,6 +120,7 @@ public:
 	unsigned long GetFlashConfigSize() { return m_flashConfigSize; }
 	unsigned long GetLockdownSize() { return m_lockdownSize; }
 	unsigned long GetFirmwareID() { return m_firmwareBuildID; }
+	signature_info *GetSignatureInfo() { return m_signatureInfo; }
 	int VerifyImageProductID(char* deviceProductID);
 
 	bool HasIO() { return m_io; }
@@ -138,6 +151,9 @@ private:
 	unsigned char * m_lockdownData;
 	unsigned char * m_memBlock;
 	unsigned long m_cntrAddr;	// BL_V7
+	bool m_hasSignature;
+
+	signature_info m_signatureInfo[BLv7_MAX];
 };
 
 #endif // _FIRMWAREIMAGE_H_

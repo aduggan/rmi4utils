@@ -62,6 +62,7 @@ enum v7_flash_command {
 	CMD_V7_ERASE,
 	CMD_V7_ERASE_AP,
 	CMD_V7_SENSOR_ID,
+	CMD_V7_SIGNATURE,
 };
 
 enum bl_version {
@@ -179,6 +180,7 @@ private:
 	int WaitForIdle(int timeout_ms, bool readF34OnSucess = true);
 	int GetFirmwareSize() { return m_blockSize * m_fwBlockCount; }
 	int GetConfigSize() { return m_blockSize * m_configBlockCount; }
+	int WriteSignatureV7(enum signature_BLv7 signature_partition, unsigned char* data, int offset);
 
 private:
 	RMIDevice & m_device;
