@@ -779,12 +779,9 @@ int RMI4Update::WriteFirmwareV7()
 
 	/* calculate the count */
 	partition_id = CORE_CODE_PARTITION;
-	if (m_bootloaderID[1] == 10) {
-		// define block count
-	} else {
-		remain_block = (m_fwBlockCount % m_payloadLength);
-		transaction_count = (m_fwBlockCount / m_payloadLength);
-	}
+
+	remain_block = (m_fwBlockCount % m_payloadLength);
+	transaction_count = (m_fwBlockCount / m_payloadLength);
 	
 	if (remain_block > 0)
 		transaction_count++;
