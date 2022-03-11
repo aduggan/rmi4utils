@@ -123,6 +123,19 @@ void FirmwareImage::ParseHierarchicalImg()
 			memcpy(m_productID, (content + 0x18), RMI_PRODUCT_ID_LENGTH);
 			m_productID[RMI_PRODUCT_ID_LENGTH] = 0;
 			break;
+		case FIXED_LOCATION_DATA_CONTAINER:
+			if (sigature_size != 0) {
+				fprintf(stdout, "FLD signature size : 0x%x\n", sigature_size);
+				m_signatureInfo[BLv7_FLD].bExisted = true;
+				m_signatureInfo[BLv7_FLD].size = sigature_size;
+			}
+			m_fldData = content;
+			m_fldSize = length;
+			break;
+		case GLOBAL_PARAMETERS_CONTAINER:
+			m_globalparaData = content;
+			m_globalparaSize = length;
+			break;
 		default:
 			break;
 		}

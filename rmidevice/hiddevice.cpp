@@ -302,6 +302,8 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 
 	tv.tv_sec = 10 / 1000;
 	tv.tv_usec = (10 % 1000) * 1000;
+
+	fprintf(stdout, "R %02x : ", addr);
 	
 	if (!m_deviceOpen)
 		return -1;
@@ -387,6 +389,12 @@ Resend:
 		addr += bytesPerRequest;
 	}
 
+	for (int i=0 ; i<len ; i++) {
+		fprintf(stdout, "%02x ", buf[i]);
+	}
+	fprintf(stdout, "\n");
+
+
 	return totalBytesRead;
 }
 
@@ -405,6 +413,12 @@ int HIDDevice::Write(unsigned short addr, const unsigned char *buf, unsigned sho
 	m_outputReport[HID_RMI4_WRITE_OUTPUT_ADDR] = addr & 0xFF;
 	m_outputReport[HID_RMI4_WRITE_OUTPUT_ADDR + 1] = (addr >> 8) & 0xFF;
 	memcpy(&m_outputReport[HID_RMI4_WRITE_OUTPUT_DATA], buf, len);
+
+			fprintf(stdout, "W %02x : ", addr);
+		for (int i=0 ; i<len ; i++) {
+			fprintf(stdout, "%02x ", buf[i]);
+		}
+		fprintf(stdout, "\n");
 
 	for (;;) {
 		m_bCancel = false;
