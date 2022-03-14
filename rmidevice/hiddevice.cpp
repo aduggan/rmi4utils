@@ -308,6 +308,10 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 	if (!m_deviceOpen)
 		return -1;
 
+	if (m_hasDebug) {
+		fprintf(stdout, "R %02x : ", addr);
+	}
+
 	if (m_bytesPerReadRequest)
 		bytesPerRequest = m_bytesPerReadRequest;
 	else
@@ -388,6 +392,12 @@ Resend:
 		}
 		addr += bytesPerRequest;
 	}
+	if (m_hasDebug) {
+		for (int i=0 ; i<len ; i++) {
+			fprintf(stdout, "%02x ", buf[i]);
+		}
+		fprintf(stdout, "\n");
+	}
 
 	for (int i=0 ; i<len ; i++) {
 		fprintf(stdout, "%02x ", buf[i]);
@@ -414,11 +424,13 @@ int HIDDevice::Write(unsigned short addr, const unsigned char *buf, unsigned sho
 	m_outputReport[HID_RMI4_WRITE_OUTPUT_ADDR + 1] = (addr >> 8) & 0xFF;
 	memcpy(&m_outputReport[HID_RMI4_WRITE_OUTPUT_DATA], buf, len);
 
-			fprintf(stdout, "W %02x : ", addr);
+	if (m_hasDebug) {
+		fprintf(stdout, "W %02x : ", addr);
 		for (int i=0 ; i<len ; i++) {
 			fprintf(stdout, "%02x ", buf[i]);
 		}
 		fprintf(stdout, "\n");
+	}
 
 	for (;;) {
 		m_bCancel = false;
