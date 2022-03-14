@@ -45,16 +45,16 @@
 
 // Leon add for BL_V7
 #define RMI_IMG_V10_CNTR_ADDR_OFFSET		0x0C
+#define RMI_IMG_V10_SIGNATURE_VERSION_NUMBER 0x11
+#define RMI_IMG_V10_SIGNATURE_LENGTH_OFFSET 0x8
+#define RMI_IMG_V10_SIGNATURE_LENGTH_SIZE 4
 
 struct container_descriptor {
 	unsigned char content_checksum[4];
 	unsigned char container_id[2];
 	unsigned char minor_version;
 	unsigned char major_version;
-	unsigned char reserved_08;
-	unsigned char reserved_09;
-	unsigned char reserved_0a;
-	unsigned char reserved_0b;
+	unsigned char signature_size[4];
 	unsigned char container_option_flags[4];
 	unsigned char content_options_length[4];
 	unsigned char content_options_address[4];
@@ -87,6 +87,22 @@ enum container_id {
 	EXTERNAL_TOUCH_AFE_CONFIG_CONTAINER,
 	UTILITY_CONTAINER,
 	UTILITY_PARAMETER_CONTAINER,
+	// Reserved : 24 ~ 26
+	// V10 above
+	FIXED_LOCATION_DATA_CONTAINER = 27,
+};
+
+enum signature_BLv7 {
+	BLv7_CORE_CODE = 0,
+	BLv7_CORE_CONFIG,
+	BLv7_FLASH_CONFIG,
+	BLv7_FLD,
+	BLv7_MAX
+};
+
+struct signature_info {
+	bool bExisted;
+	unsigned short size;
 };
 // BL_V7 end
 
@@ -94,7 +110,7 @@ class FirmwareImage
 {
 public:
 	FirmwareImage() : m_firmwareBuildID(0), m_packageID(0), m_firmwareData(NULL), m_configData(NULL), m_lockdownData(NULL),
-				m_memBlock(NULL)
+				m_memBlock(NULL), m_hasSignature(false), m_fldData(NULL), m_fldSize(0), m_globalparaData(NULL), m_globalparaSize(0)
 	{}
 	int Initialize(const char * filename);
 	int VerifyImageMatchesDevice(unsigned long deviceFirmwareSize,
@@ -103,11 +119,16 @@ public:
 	unsigned char * GetConfigData() { return m_configData; }
 	unsigned char * GetFlashConfigData() { return m_flashConfigData; }
 	unsigned char * GetLockdownData() { return m_lockdownData; }
+	unsigned char * GetFLDData() { return m_fldData; }
+	unsigned char * GetGlobalParametersData() { return m_globalparaData; }
 	unsigned long GetFirmwareSize() { return m_firmwareSize; }
 	unsigned long GetConfigSize() { return m_configSize; }
 	unsigned long GetFlashConfigSize() { return m_flashConfigSize; }
 	unsigned long GetLockdownSize() { return m_lockdownSize; }
 	unsigned long GetFirmwareID() { return m_firmwareBuildID; }
+	unsigned long GetFLDSize() { return m_fldSize; }
+	unsigned long GetGlobalParametersSize() { return m_globalparaSize; }
+	signature_info *GetSignatureInfo() { return m_signatureInfo; }
 	int VerifyImageProductID(char* deviceProductID);
 
 	bool HasIO() { return m_io; }
@@ -138,6 +159,13 @@ private:
 	unsigned char * m_lockdownData;
 	unsigned char * m_memBlock;
 	unsigned long m_cntrAddr;	// BL_V7
+	bool m_hasSignature;
+	unsigned char * m_fldData;
+	unsigned long m_fldSize;
+	unsigned char * m_globalparaData;
+	unsigned long m_globalparaSize;
+
+	signature_info m_signatureInfo[BLv7_MAX];
 };
 
 #endif // _FIRMWAREIMAGE_H_

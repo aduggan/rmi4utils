@@ -302,6 +302,8 @@ int HIDDevice::Read(unsigned short addr, unsigned char *buf, unsigned short len)
 
 	tv.tv_sec = 10 / 1000;
 	tv.tv_usec = (10 % 1000) * 1000;
+
+	fprintf(stdout, "R %02x : ", addr);
 	
 	if (!m_deviceOpen)
 		return -1;
@@ -396,6 +398,12 @@ Resend:
 		}
 		fprintf(stdout, "\n");
 	}
+
+	for (int i=0 ; i<len ; i++) {
+		fprintf(stdout, "%02x ", buf[i]);
+	}
+	fprintf(stdout, "\n");
+
 
 	return totalBytesRead;
 }
@@ -741,11 +749,9 @@ bool HIDDevice::CheckABSEvent()
 	int fd=-1;
 	unsigned int type;
 	int abs[6] = {0};
-	int k;
 	struct dirent **namelist;
-	int i, ndev, devnum, match;
-	char *filename;
-	int max_device = 0;
+	int i, ndev;
+
     char input_event_name[PATH_MAX];
 	unsigned long bit[EV_MAX][NBITS(KEY_MAX)];
 
