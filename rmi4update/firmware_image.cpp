@@ -55,13 +55,14 @@ void FirmwareImage::ParseHierarchicalImg()
 	unsigned char *content;
 	unsigned short container_id;
 	unsigned int sigature_size;
+	
+	for (ii = 0; ii < BLv7_MAX; ii++) {
+		m_signatureInfo[ii].bExisted = false;
+		m_signatureInfo[ii].size = 0;
+	}
 
 	if (m_bootloaderVersion == RMI_IMG_V10_SIGNATURE_VERSION_NUMBER) {
-		fprintf (stdout, "has signature\n");
-		for (ii = 0; ii < BLv7_MAX; ii++) {
-			m_signatureInfo[ii].bExisted = false;
-			m_signatureInfo[ii].size = 0;
-		}
+		fprintf (stdout, "has signature\n");	
 	}
 
 	m_cntrAddr = extract_long(&m_memBlock[RMI_IMG_V10_CNTR_ADDR_OFFSET]);

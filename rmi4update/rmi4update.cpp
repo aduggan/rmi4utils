@@ -355,6 +355,9 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 reset:
 	m_device.Reset();
 rebind:
+	if (m_bootloaderID[1] >= 10) {
+		Sleep(5000);
+	}
 	m_device.RebindDriver();
 	if(!m_device.CheckABSEvent())
 	{
@@ -874,11 +877,13 @@ int RMI4Update::WriteFirmwareV7()
 	}
 
 	if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
-		// Write signature.
-		rc = WriteSignatureV7(BLv7_CORE_CODE, m_firmwareImage.GetFirmwareData(), offset);
-		if (rc != UPDATE_SUCCESS) {
-			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return rc;	
+		if (m_firmwareImage.GetSignatureInfo()[BLv7_CORE_CODE].bExisted) {
+			// Write signature.
+			rc = WriteSignatureV7(BLv7_CORE_CODE, m_firmwareImage.GetFirmwareData(), offset);
+			if (rc != UPDATE_SUCCESS) {
+				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+				return rc;	
+			}
 		}
 	}
 
@@ -1000,11 +1005,13 @@ int RMI4Update::WriteCoreConfigV7()
 	}
 
 	if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
-		// Write signature.
-		rc = WriteSignatureV7(BLv7_CORE_CONFIG, m_firmwareImage.GetConfigData(), offset);
-		if (rc != UPDATE_SUCCESS) {
-			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return rc;	
+		if (m_firmwareImage.GetSignatureInfo()[BLv7_CORE_CONFIG].bExisted) {
+			// Write signature.
+			rc = WriteSignatureV7(BLv7_CORE_CONFIG, m_firmwareImage.GetConfigData(), offset);
+			if (rc != UPDATE_SUCCESS) {
+				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+				return rc;	
+			}
 		}
 	}
 
@@ -1126,11 +1133,13 @@ int RMI4Update::WriteFlashConfigV7()
 	}
 
 	if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
-		// Write signature.
-		rc = WriteSignatureV7(BLv7_FLASH_CONFIG, m_firmwareImage.GetFlashConfigData(), offset);
-		if (rc != UPDATE_SUCCESS) {
-			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return rc;	
+		if (m_firmwareImage.GetSignatureInfo()[BLv7_FLASH_CONFIG].bExisted) {
+			// Write signature.
+			rc = WriteSignatureV7(BLv7_FLASH_CONFIG, m_firmwareImage.GetFlashConfigData(), offset);
+			if (rc != UPDATE_SUCCESS) {
+				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+				return rc;	
+			}
 		}
 	}
 
@@ -1258,11 +1267,13 @@ int RMI4Update::WriteFLDV7()
 	}
 
 	if(m_device.GetDeviceType() == RMI_DEVICE_TYPE_TOUCHPAD)  {
-		// Write signature.
-		rc = WriteSignatureV7(BLv7_FLD, m_firmwareImage.GetFLDData(), offset);
-		if (rc != UPDATE_SUCCESS) {
-			fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
-			return rc;	
+		if (m_firmwareImage.GetSignatureInfo()[BLv7_FLD].bExisted) {
+			// Write signature.
+			rc = WriteSignatureV7(BLv7_FLD, m_firmwareImage.GetFLDData(), offset);
+			if (rc != UPDATE_SUCCESS) {
+				fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+				return rc;	
+			}
 		}
 	}
 
