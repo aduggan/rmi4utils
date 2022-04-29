@@ -195,7 +195,7 @@ private:
 	int GetFirmwareSize() { return m_blockSize * m_fwBlockCount; }
 	int GetConfigSize() { return m_blockSize * m_configBlockCount; }
 	int WriteSignatureV7(enum signature_BLv7 signature_partition, unsigned char* data, int offset);
-	bool CheckWriteProtectionActivated();
+	bool IsWriteProtectionSupported();
 
 private:
 	RMIDevice & m_device;
