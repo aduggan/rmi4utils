@@ -1119,6 +1119,10 @@ int RMI4Update::WriteFlashConfigV7()
 		do {
 			Sleep(20);
 			rmi4update_poll();
+			if (IsWriteProtectionSupported()) {
+				if (m_flashStatus == WRITE_PROTECTION)
+					return UPDATE_FAIL_WRITE_PROTECTED;
+			}
 			if (m_flashStatus == SUCCESS){
 				break;
 			}
@@ -1252,6 +1256,10 @@ int RMI4Update::WriteFLDV7()
 		do {
 			Sleep(20);
 			rmi4update_poll();
+			if (IsWriteProtectionSupported()) {
+				if (m_flashStatus == WRITE_PROTECTION)
+					return UPDATE_FAIL_WRITE_PROTECTED;
+			}
 			if (m_flashStatus == SUCCESS){
 				break;
 
@@ -1442,6 +1450,10 @@ int RMI4Update::EraseFlashConfigV10()
 	do {
 		Sleep(20);
 		rmi4update_poll();
+		if (IsWriteProtectionSupported()) {
+			if (m_flashStatus == WRITE_PROTECTION)
+				return UPDATE_FAIL_WRITE_PROTECTED;
+		}
 		if (m_flashStatus == SUCCESS){
 			break;
 		}
@@ -1569,6 +1581,10 @@ int RMI4Update::EraseFirmwareV7()
 	do {
 		Sleep(20);
 		rmi4update_poll();
+		if (IsWriteProtectionSupported()) {
+			if (m_flashStatus == WRITE_PROTECTION)
+				return UPDATE_FAIL_WRITE_PROTECTED;
+		}
 		if (m_flashStatus == SUCCESS){
 			break;
 		}
@@ -1681,7 +1697,7 @@ int RMI4Update::EnterFlashProgrammingV7()
 		rmi4update_poll();
 		if (!m_inBLmode)
 			return UPDATE_FAIL_DEVICE_NOT_IN_BOOTLOADER;
-
+			
 	} else
 		fprintf(stdout, "Already in BL mode, skip...\n");
 
@@ -1971,4 +1987,13 @@ int RMI4Update::WaitForIdle(int timeout_ms, bool readF34OnSucess)
 	}
 
 	return UPDATE_SUCCESS;
+}
+
+bool RMI4Update::IsWriteProtectionSupported()
+{
+	if ((m_bootloaderID[1] >= 10) ||
+		((m_bootloaderID[1] == 8) && (m_bootloaderID[0] >= 7))){
+		return true;
+	} else 
+		return false;
 }

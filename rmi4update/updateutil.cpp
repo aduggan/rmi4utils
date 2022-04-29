@@ -52,6 +52,7 @@ const char *update_error_str[] = {
 	"the firmware image is older then the firmware on the device",	// UPDATE_FAIL_FIRMWARE_IMAGE_IS_OLDER
 	"invalid parameter",						// UPDATE_FAIL_INVALID_PARAMETER
 	"failed to open firmware image file",				// UPDATE_FAIL_OPEN_FIRMWARE_IMAGE
+	"write protection is activated",			// UPDATE_FAIL_WRITE_PROTECTED
 };
 
 const char * update_err_to_string(int err)

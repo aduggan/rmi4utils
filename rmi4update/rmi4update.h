@@ -35,6 +35,7 @@ enum v7_status {
 	FLASH_PROGRAMMING_KEY_INCORRECT,
 	BAD_PARTITION_TABLE,
 	CHECKSUM_FAILED,
+	WRITE_PROTECTION = 0x0E,
 	FLASH_HARDWARE_FAILURE = 0x1f,
 };
 
@@ -194,6 +195,7 @@ private:
 	int GetFirmwareSize() { return m_blockSize * m_fwBlockCount; }
 	int GetConfigSize() { return m_blockSize * m_configBlockCount; }
 	int WriteSignatureV7(enum signature_BLv7 signature_partition, unsigned char* data, int offset);
+	bool IsWriteProtectionSupported();
 
 private:
 	RMIDevice & m_device;
