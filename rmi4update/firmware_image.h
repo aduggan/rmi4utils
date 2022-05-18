@@ -110,7 +110,8 @@ class FirmwareImage
 {
 public:
 	FirmwareImage() : m_firmwareBuildID(0), m_packageID(0), m_firmwareData(NULL), m_configData(NULL), m_lockdownData(NULL),
-				m_memBlock(NULL), m_hasSignature(false), m_fldData(NULL), m_fldSize(0), m_globalparaData(NULL), m_globalparaSize(0)
+				m_memBlock(NULL), m_hasSignature(false), m_fldData(NULL), m_fldSize(0), m_globalparaData(NULL), m_globalparaSize(0),
+				m_firmwareVersion(0), m_hasFirmwareVersion(false)
 	{}
 	int Initialize(const char * filename);
 	int VerifyImageMatchesDevice(unsigned long deviceFirmwareSize,
@@ -128,8 +129,10 @@ public:
 	unsigned long GetFirmwareID() { return m_firmwareBuildID; }
 	unsigned long GetFLDSize() { return m_fldSize; }
 	unsigned long GetGlobalParametersSize() { return m_globalparaSize; }
+	unsigned short GetFirmwareVersion() { return m_firmwareVersion; }
 	signature_info *GetSignatureInfo() { return m_signatureInfo; }
 	int VerifyImageProductID(char* deviceProductID);
+	bool IsImageHasFirmwareVersion() { return m_hasFirmwareVersion; }
 
 	bool HasIO() { return m_io; }
 	~FirmwareImage();
@@ -164,6 +167,8 @@ private:
 	unsigned long m_fldSize;
 	unsigned char * m_globalparaData;
 	unsigned long m_globalparaSize;
+	unsigned short m_firmwareVersion;
+	bool m_hasFirmwareVersion;
 
 	signature_info m_signatureInfo[BLv7_MAX];
 };

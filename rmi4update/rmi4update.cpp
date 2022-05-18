@@ -158,6 +158,21 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 		}
 		fprintf(stdout, "Enable Flash done V7+...\n");
 
+		if (IsBLv87()) {
+			if (m_firmwareImage.IsImageHasFirmwareVersion()) {
+				rc = ReadMSL();
+				fprintf(stdout, "MSL : 0x%x\n", m_MSL);
+				if (m_MSL > m_firmwareImage.GetFirmwareVersion()) {
+					fprintf(stdout, "MSL checking failed. device(0x%x) > image(0x%x)\n", 
+						m_MSL, m_firmwareImage.GetFirmwareVersion());
+					rc = UPDATE_FAIL_MSL_CHECKING;
+					goto reset;
+				} else {
+					fprintf(stdout, "Passing MSL checking\n");
+				}
+			}
+		}
+
 		if (m_bootloaderID[1] >= 10) {
 			fprintf(stdout, "Writing FLD V10...\n");
 			rc = WriteFLDV7();
@@ -1119,7 +1134,7 @@ int RMI4Update::WriteFlashConfigV7()
 		do {
 			Sleep(20);
 			rmi4update_poll();
-			if (IsWriteProtectionSupported()) {
+			if (IsBLv87()) {
 				if (m_flashStatus == WRITE_PROTECTION)
 					return UPDATE_FAIL_WRITE_PROTECTED;
 			}
@@ -1256,7 +1271,7 @@ int RMI4Update::WriteFLDV7()
 		do {
 			Sleep(20);
 			rmi4update_poll();
-			if (IsWriteProtectionSupported()) {
+			if (IsBLv87()) {
 				if (m_flashStatus == WRITE_PROTECTION)
 					return UPDATE_FAIL_WRITE_PROTECTED;
 			}
@@ -1450,7 +1465,7 @@ int RMI4Update::EraseFlashConfigV10()
 	do {
 		Sleep(20);
 		rmi4update_poll();
-		if (IsWriteProtectionSupported()) {
+		if (IsBLv87()) {
 			if (m_flashStatus == WRITE_PROTECTION)
 				return UPDATE_FAIL_WRITE_PROTECTED;
 		}
@@ -1581,7 +1596,7 @@ int RMI4Update::EraseFirmwareV7()
 	do {
 		Sleep(20);
 		rmi4update_poll();
-		if (IsWriteProtectionSupported()) {
+		if (IsBLv87()) {
 			if (m_flashStatus == WRITE_PROTECTION)
 				return UPDATE_FAIL_WRITE_PROTECTED;
 		}
@@ -1989,11 +2004,27 @@ int RMI4Update::WaitForIdle(int timeout_ms, bool readF34OnSucess)
 	return UPDATE_SUCCESS;
 }
 
-bool RMI4Update::IsWriteProtectionSupported()
+bool RMI4Update::IsBLv87()
 {
 	if ((m_bootloaderID[1] >= 10) ||
 		((m_bootloaderID[1] == 8) && (m_bootloaderID[0] >= 7))){
 		return true;
 	} else 
 		return false;
+}
+
+int RMI4Update::ReadMSL()
+{
+	int rc;
+	unsigned char idStr[3];
+	unsigned short query9Addr = m_f34.GetQueryBase() + 9;
+	unsigned char offset;
+	unsigned char MSL[2];
+
+	rc = m_device.Read(query9Addr, MSL, sizeof(MSL));
+	if (rc != sizeof(MSL))
+		return UPDATE_FAIL_READ_F34_QUERIES;
+
+	m_MSL = MSL[0] << 8 | MSL[1];
+	return UPDATE_SUCCESS;
 }

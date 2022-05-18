@@ -123,6 +123,13 @@ void FirmwareImage::ParseHierarchicalImg()
 			m_firmwareBuildID = extract_long(content + 4);
 			memcpy(m_productID, (content + 0x18), RMI_PRODUCT_ID_LENGTH);
 			m_productID[RMI_PRODUCT_ID_LENGTH] = 0;
+			if ((descriptor->major_version == 0) && 
+				(descriptor->minor_version > 0)) {
+				m_hasFirmwareVersion = true;
+				fprintf(stdout, "General Information version : %d.%d\n", descriptor->major_version, descriptor->minor_version);
+				m_firmwareVersion = *(content + 0x26) << 8 | *(content + 0x27);
+				fprintf(stdout, "Firmware version : 0x%x\n", m_firmwareVersion);
+			}
 			break;
 		case FIXED_LOCATION_DATA_CONTAINER:
 			if (sigature_size != 0) {
