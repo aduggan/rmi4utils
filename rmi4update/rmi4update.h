@@ -195,7 +195,8 @@ private:
 	int GetFirmwareSize() { return m_blockSize * m_fwBlockCount; }
 	int GetConfigSize() { return m_blockSize * m_configBlockCount; }
 	int WriteSignatureV7(enum signature_BLv7 signature_partition, unsigned char* data, int offset);
-	bool IsWriteProtectionSupported();
+	bool IsBLv87();
+	int ReadMSL();
 
 private:
 	RMIDevice & m_device;
@@ -237,6 +238,10 @@ private:
 	bool m_hasFlashConfig;
 	bool m_hasGlobalParameters;
 	/* BL_V7 end */
+
+	/* BL v8.7 */
+	unsigned short m_MSL;
+	/* BL v8.7 end */
 
 	/* for BL V10 */
 	bool m_hasFLD;
