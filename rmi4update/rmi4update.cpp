@@ -161,6 +161,10 @@ int RMI4Update::UpdateFirmware(bool force, bool performLockdown)
 		if (IsBLv87()) {
 			if (m_firmwareImage.IsImageHasFirmwareVersion()) {
 				rc = ReadMSL();
+				if (rc != UPDATE_SUCCESS) {
+					fprintf(stderr, "%s: %s\n", __func__, update_err_to_string(rc));
+					goto reset;
+				}
 				fprintf(stdout, "MSL : 0x%x\n", m_MSL);
 				if (m_MSL > m_firmwareImage.GetFirmwareVersion()) {
 					fprintf(stdout, "MSL checking failed. device(0x%x) > image(0x%x)\n", 
