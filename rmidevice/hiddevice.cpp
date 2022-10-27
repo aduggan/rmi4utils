@@ -470,7 +470,9 @@ int HIDDevice::ToggleInterruptMask(bool enable)
 	// However, it might have no action even we set this feature with specific value.
 	// Need FW team's help to query more information about the existence of functions.
 	if (!hasVendorDefineLIDMode) {
-		fprintf(stdout, "no LID mode feature, return\n");
+		if (m_hasDebug) {
+			fprintf(stdout, "no LID mode feature, return\n");
+		}
 		return 0;
 	}
 	
