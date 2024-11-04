@@ -37,7 +37,7 @@ class RMIDevice
 {
 public:
 	RMIDevice() : m_functionList(), m_sensorID(0), m_bCancel(false), m_bytesPerReadRequest(0), m_page(-1),
-		      m_deviceType(RMI_DEVICE_TYPE_ANY)
+		      m_deviceType(RMI_DEVICE_TYPE_TOUCHPAD)
 	{ m_hasDebug = false; }
 	virtual ~RMIDevice() {}
 	virtual int Open(const char * filename) = 0;
